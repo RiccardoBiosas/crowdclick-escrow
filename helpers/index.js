@@ -4,6 +4,8 @@ const convertFromWeiToEthereum = amount => {
   return ethereumBalanceToNumber
 }
 
+const toE18 = amount =>  web3.utils.toWei(amount)
+
 /* dirty way to take into account the gas fee */
 const approximateEquality = (x, y, epsilon = 0.001) => {
   return Math.abs(x - y) < epsilon
@@ -11,5 +13,6 @@ const approximateEquality = (x, y, epsilon = 0.001) => {
 
 module.exports = {
   convertFromWeiToEthereum,
-  approximateEquality
+  approximateEquality,
+  toE18
 }

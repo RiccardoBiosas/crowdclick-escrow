@@ -3,10 +3,15 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+
 import "./constants/CrowdclickEscrowErrors.sol";
+import "./interfaces/ICrowdclickOracle.sol";
+
 
 contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors {
     using SafeMath for uint256;
+
+    ICrowdclickOracle internal crowdclickOracle;
 
     struct Task {
         uint256 taskBudget;
@@ -16,14 +21,26 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors {
         bool isActive;
     }
 
-    uint256 HARDCODED_MINIMUM_WITHDRAWAL = 30000000000000000 wei; // = 0.03 ethereum
     mapping(address => Task[]) private taskCollection;
     mapping(address => uint256) private publisherAccountBalance;
     mapping(address => uint256) private userAccountBalance;
 
-    /**        
+    /** by default it converts to 18decimals */
+    uint256 public divider = 10 ** 18;
+    /** greater than price of eth to avoid decimals */
+    uint256 public multiplier = 10 * 100000;
+    /** base minimumUsdWithdrawal * multiplier */
+    uint256 public minimumUsdWithdrawal;
+
+
+    constructor(address _crowdclickOracleAddress, uint256 _minimumUsdWithdrawal) public {
+        crowdclickOracle = ICrowdclickOracle(_crowdclickOracleAddress);
+        minimumUsdWithdrawal = _minimumUsdWithdrawal;
+    }
+
+    /****************************************       
         EXTERNAL FUNCTIONS        
-    */
+    *****************************************/
 
     /** open task */
     function openTask(
@@ -62,8 +79,10 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors {
 
     /** withdraw user balance */
     function withdrawUserBalance(uint256 withdrawAmount) external payable {
+        uint256 withdrawAmountToUsd = calculateMinimumEthWithdrawal(withdrawAmount);
+        /** one-thousandth */
         require(
-            withdrawAmount >= HARDCODED_MINIMUM_WITHDRAWAL,
+            withdrawAmountToUsd >= minimumUsdWithdrawal.mul(1000),
             LESS_THAN_MINIMUM_WITHDRAWAL
         );
         require(
@@ -152,13 +171,18 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors {
         }
     }
 
-    /**        
-        INTERNAL FUNCTIONS        
-    */
+    function calculateWithdrawalRate(uint256 _assetPrice) view external returns(uint256) {
+        require(_assetPrice > 0, VALUE_NOT_GREATER_THAN_0);
+        return minimumUsdWithdrawal.div(_assetPrice);
+    }
+
+    /****************************************       
+        PRIVATE FUNCTIONS        
+    *****************************************/
 
     /** retrieves correct task based on the address of the publisher and the campaign's url */
     function helperSelectTask(address _address, string memory _campaignUrl)
-        internal
+        private
         view
         returns (uint256, bool)
     {
@@ -172,5 +196,29 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors {
             }
         }
         return (indx, found);
+    }
+
+    function calculateMinimumEthWithdrawal(uint256 _weiAmount) private returns(uint256) {
+        require(_weiAmount > 0, VALUE_NOT_GREATER_THAN_0);
+        /** fetches current eth/usd pricefeed */
+        uint256 currentEthPrice = crowdclickOracle.getEthUsdPriceFeed();
+        /** adjusts the 8decimals-long eth/usd pricefeed and adjusts by multiplier */
+        uint256 adjustedCurrentEthPrice = (currentEthPrice.div(100000000)).mul(multiplier);
+        /** adjusts the 18decimals-long wei value and adjusts by multiplier */
+        uint256 adjustedEthAmount = adjustByDivider(adjustByMultiplier(_weiAmount));
+        /** one-millionth */
+        uint256 sliceOfWholeEth = adjustedCurrentEthPrice.div(adjustedEthAmount);
+        /** adjusted wei/usd pricefeed */
+        return adjustedCurrentEthPrice.div(sliceOfWholeEth);
+    }
+
+    function adjustByMultiplier(uint256 _value) view private returns(uint256) {
+        require(_value > 0, VALUE_NOT_GREATER_THAN_0);
+        return _value.mul(multiplier);
+    }
+
+    function adjustByDivider(uint256 _value) view private returns(uint256) {
+        require(_value > 0, VALUE_NOT_GREATER_THAN_0);
+        return _value.div(divider);
     }
 }

@@ -1,6 +1,9 @@
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
+const CrowdclickOracle = artifacts.require('CrowdclickOracle')
 const { assert } = require('chai')
-const { convertFromWeiToEthereum, approximateEquality } = require('../helpers')
+const { convertFromWeiToEthereum, approximateEquality, toE18 } = require('../helpers')
+const truffleAssert = require('truffle-assertions')
+
 
 const mockCampaigns = [
   {
@@ -11,19 +14,31 @@ const mockCampaigns = [
     isActive: true
   }
 ]
+/** crowdclick oracle deployment */
+const chainlinkAggregatorRinkebyAddress = '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e'
+const startTracking = ~~(Date.now() / 1000)
+const trackingInterval = 60 * 60 * 24 // time interval = 1 day
+
+/** crowdclick escrow deployment */
+const minimumUsdWithdrawal = 4
+
 
 contract('Crowdclick escrow contract', accounts => {
-  const contractOwner = accounts[0]
-  const publisher = accounts[1]
-  const user = accounts[2]
-  let crowdclickEscrowContractInstance
+  const [ owner, publisher, user ] = accounts
+
+  /** contracts */
+  let crowdclickEscrow, crowdclickOracle
+  /** contracts' values */
+  let crowdclickOracleAddress
 
   before(async () => {
-    crowdclickEscrowContractInstance = await CrowdclickEscrow.deployed()
+    crowdclickOracle = await CrowdclickOracle.new(chainlinkAggregatorRinkebyAddress, startTracking, trackingInterval, { from: owner })
+    crowdclickOracleAddress = crowdclickOracle.address
+    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickOracleAddress, minimumUsdWithdrawal, { from: owner })
   })
 
   it('should show 0 as the initial contract balance of the publisher', async () => {
-    const publisherContractWeiBalance = await crowdclickEscrowContractInstance.balanceOfPublisher(
+    const publisherContractWeiBalance = await crowdclickEscrow.balanceOfPublisher(
       publisher
     )
     const publisherContractEtherereumBalance = convertFromWeiToEthereum(
@@ -33,7 +48,7 @@ contract('Crowdclick escrow contract', accounts => {
   })
 
   it('should show 0 as the initial balance of the user', async () => {
-    const userContractWeiBalance = await crowdclickEscrowContractInstance.balanceOfPublisher(
+    const userContractWeiBalance = await crowdclickEscrow.balanceOfPublisher(
       user
     )
     const userContractEtherereumBalance = convertFromWeiToEthereum(
@@ -44,9 +59,9 @@ contract('Crowdclick escrow contract', accounts => {
 
   it("should show the publisher's contract balance as equal to the budget of the first publisher's task being created", async () => {
     const campaign = mockCampaigns[0]
-    const budgetToWei = web3.utils.toWei(campaign.taskBudget)
-    const rewardToWei = web3.utils.toWei(campaign.taskReward)
-    await crowdclickEscrowContractInstance.openTask(
+    const budgetToWei = toE18(campaign.taskBudget)
+    const rewardToWei = toE18(campaign.taskReward)
+    await crowdclickEscrow.openTask(
       budgetToWei,
       rewardToWei,
       campaign.url,
@@ -55,7 +70,7 @@ contract('Crowdclick escrow contract', accounts => {
         value: budgetToWei
       }
     )
-    const publisherContractWeiBalance = await crowdclickEscrowContractInstance.balanceOfPublisher(
+    const publisherContractWeiBalance = await crowdclickEscrow.balanceOfPublisher(
       publisher
     )
     const publisherContractEtherereumBalance = convertFromWeiToEthereum(
@@ -69,15 +84,15 @@ contract('Crowdclick escrow contract', accounts => {
 
   it("should forward the reward for the task previously created and increase the user's contract balance by an amount equal to the campaign's reward", async () => {
     const campaign = mockCampaigns[0]
-    await crowdclickEscrowContractInstance.forwardRewards(
+    await crowdclickEscrow.forwardRewards(
       user,
       publisher,
       campaign.url,
       {
-        from: contractOwner
+        from: owner
       }
     )
-    const userContractWeiBalance = await crowdclickEscrowContractInstance.balanceOfUser(
+    const userContractWeiBalance = await crowdclickEscrow.balanceOfUser(
       user
     )
     const userContractEtherereumBalance = convertFromWeiToEthereum(
@@ -88,13 +103,13 @@ contract('Crowdclick escrow contract', accounts => {
 
   it("should show the publisher's contract balance as the initially allocated campaign budget minus the previously forwarded reward", async () => {
     const campaign = mockCampaigns[0]
-    const publisherContractWeiBalance = await crowdclickEscrowContractInstance.balanceOfPublisher(
+    const publisherContractWeiBalance = await crowdclickEscrow.balanceOfPublisher(
       publisher
     )
     const publisherContractEtherereumBalance = convertFromWeiToEthereum(
       publisherContractWeiBalance
     )
-    const userContractWeiBalance = await crowdclickEscrowContractInstance.balanceOfUser(
+    const userContractWeiBalance = await crowdclickEscrow.balanceOfUser(
       user
     )
     const userContractEtherereumBalance = convertFromWeiToEthereum(
@@ -112,11 +127,14 @@ contract('Crowdclick escrow contract', accounts => {
   it("should allow the user to withdraw the earned balance and show the user's ethereum wallet balance as the initial balance plus the withdrawn balance minus the gas fee estimate", async () => {
     const campaign = mockCampaigns[0]
     const userInitialWalletBalance = await web3.eth.getBalance(user)
-    const taskRewardToEth = web3.utils.toWei(campaign.taskReward)
-    await crowdclickEscrowContractInstance.withdrawUserBalance(
+
+    const taskRewardToEth = toE18(campaign.taskReward)
+    console.log('taskRewardToEth: ', taskRewardToEth.toString())
+    const tx = await crowdclickEscrow.withdrawUserBalance(
       taskRewardToEth,
       { from: user }
     )
+
     const expectedBalance =
       parseFloat(userInitialWalletBalance, 10) + parseFloat(taskRewardToEth, 10)
     const expectedBalanceToEthereum = convertFromWeiToEthereum(
@@ -127,8 +145,11 @@ contract('Crowdclick escrow contract', accounts => {
     const userFinalBalanceToEthereum = convertFromWeiToEthereum(
       userFinalBalance
     )
+    // console.log('userFinalBalance', userFinalBalance)
+    // console.log('userFinalBalanceToEthereum', userFinalBalanceToEthereum)
+    // console.log('expectedBalanceToEthereum', expectedBalanceToEthereum)
     assert.isTrue(
-      approximateEquality(userFinalBalanceToEthereum, expectedBalanceToEthereum)
+      approximateEquality(userFinalBalanceToEthereum, expectedBalanceToEthereum, 0.03)
     )
   })
 
@@ -139,7 +160,7 @@ contract('Crowdclick escrow contract', accounts => {
       currentBudget: (+campaign.currentBudget - +campaign.taskReward).toString()
     }
 
-    const fetchedCampaign = await crowdclickEscrowContractInstance.lookupTask(
+    const fetchedCampaign = await crowdclickEscrow.lookupTask(
       expectedCampaign.url,
       {
         from: publisher
@@ -182,7 +203,7 @@ contract('Crowdclick escrow contract', accounts => {
       parseFloat(campaign.taskReward, 10)
 
     /** we perform the withdrawal and check the actual balance after performing withdrawfromcampaign */
-    await crowdclickEscrowContractInstance.withdrawFromCampaign(campaign.url, {
+    await crowdclickEscrow.withdrawFromCampaign(campaign.url, {
       from: publisher
     })
     const publisherWalletBalanceAfterWithdraw = await web3.eth.getBalance(
