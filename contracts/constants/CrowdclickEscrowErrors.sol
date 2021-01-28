@@ -18,4 +18,6 @@ contract CrowdclickEscrowErrors {
         internal constant BALANCE_GREATER_THAN_WITHDRAW_AMOUNT = "BALANCE_MUST_BE_>=_AMOUNT";
     string
         internal constant VALUE_NOT_GREATER_THAN_0 = "VALUE_NOT_GREATER_THAN_0";
+    string internal constant WRONG_CAMPAIGN_REWARD = "WRONG_CAMPAIGN_REWARD";
+    string internal constant NOT_FEE_COLLECTOR = "NOT_FEE_COLLECTOR";
 }

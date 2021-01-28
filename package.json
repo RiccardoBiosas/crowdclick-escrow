@@ -7,8 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "commpile": "truffle compile",
+    "compile": "truffle compile",
     "test:develop": "truffle test --network develop",
+    "test:rinkebyFork": "truffle test --network rinkebyFork",
+    "test:goerliFork": "truffle test --network goerliFork",
     "migrate:goerli": "truffle migrate --network goerli",
     "migate:mumbai": "truffle migrate --network mumbai"
   },
@@ -29,6 +31,7 @@
     "truffle-assertions": "^0.9.2"
   },
   "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.10",
     "redux-devtools-extension": "^2.13.8"
   }
 }

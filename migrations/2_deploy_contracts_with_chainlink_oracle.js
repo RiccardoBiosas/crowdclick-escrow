@@ -6,22 +6,20 @@ const startTracking = ~~(Date.now() / 1000)
 const trackingInterval = 60 * 60 * 24 // time interval = 1 day
 
 const minimumUsdWithdrawal = 4
+const feePercentage = 10
 
 const deployCrowdclickOracle = async deployer => {
   const crowdclickOracle = await deployer.deploy(CrowdclickOracle, chainlinkAggregatorRinkebyAddress, startTracking, trackingInterval)
   return crowdclickOracle
 }
 
-const deployCrowdclickEscrow = async (deployer, crowdclickOracleAddress) => {
-  const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickOracleAddress, minimumUsdWithdrawal)
-  return crowdclickEscrow
-}
-
 module.exports = function(deployer, network, accounts) {
-  deployer.then(async() => {
-    const crowdclickOracle = await deployCrowdclickOracle(deployer)
-    const crowdclickEscrow = await deployCrowdclickEscrow(deployer, crowdclickOracle.address)
-  }).catch(e => {
-    console.error(e)
-  })
+    deployer.then(async() => {
+      const crowdclickOracle = await deployCrowdclickOracle(deployer)
+      const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickOracle.address, minimumUsdWithdrawal, feePercentage, accounts[0])
+      console.log(`crowdclickOracle address: ${crowdclickOracle.address}`)
+      console.log(`crowdclickEscrow address: ${crowdclickEscrow.address}`)
+    }).catch(e => {
+      console.error(e)
+    })
 };

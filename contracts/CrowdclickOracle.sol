@@ -3,10 +3,13 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "@chainlink/contracts/src/v0.5/interfaces/AggregatorV3Interface.sol";
 
-contract CrowdclickOracle is Ownable {
+import "./constants/CrowdclickOracleErrors.sol";
+
+contract CrowdclickOracle is Ownable, CrowdclickOracleErrors, ReentrancyGuard {
     using SafeMath for uint256;
 
     AggregatorV3Interface internal priceFeedOracle;
@@ -26,7 +29,7 @@ contract CrowdclickOracle is Ownable {
         trackingInterval = _trackingInterval;
     }
 
-    function getEthUsdPriceFeed() external returns(uint256) {
+    function getEthUsdPriceFeed() external nonReentrant returns(uint256) {
         if (now > startTracking.add(trackingInterval)) {
             currentEthUsdPrice = getOraclePriceFeed();
             startTracking = now;
@@ -34,12 +37,12 @@ contract CrowdclickOracle is Ownable {
             return currentEthUsdPrice;
         } else {
             emit PricefeedUpdate(currentEthUsdPrice, true);
-           return currentEthUsdPrice; 
+           return currentEthUsdPrice;
         }
     }
 
     function changeTrackingInterval(uint256 _newTrackingInterval) external onlyOwner() {
-        require(_newTrackingInterval > 0, 'WRONG_TRACKING_INTERVAL');
+        require(_newTrackingInterval > 0, INTERVAL_LESS_ZERO);
         trackingInterval = _newTrackingInterval;
     }
 
