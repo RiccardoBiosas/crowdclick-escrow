@@ -65,6 +65,5 @@ module.exports = {
   calculateFee,
   bigNumbersAddition,
   updateCampaign,
-  CAMPAIGN_OPERATION,
   toE18Campaign
 }
