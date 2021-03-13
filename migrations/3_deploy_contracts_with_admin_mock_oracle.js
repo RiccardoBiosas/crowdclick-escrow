@@ -3,7 +3,7 @@ const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 
 const minimumUsdWithdrawal = 4
 const feePercentage = 10
-const mockEthPrice = 2000
+const mockEthPrice = 1967
 
 const deployCrowdclickMockOracle = async (deployer, accounts) => {
   const crowdclickMockOracle = await deployer.deploy(CrowdclickMockOracle, mockEthPrice, accounts[0])
