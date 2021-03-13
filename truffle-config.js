@@ -18,10 +18,13 @@ module.exports = {
       port: 8545,
       network_id: 5
     },
+    mumbaiFork: {
+      host: "127.0.0.1",
+      port: 8545,
+      network_id: 80001
+    },
     ropsten: {
-      provider: function() {
-        return new HDWalletProvider(process.env.MNEMONIC, process.env.INFURA_ROPSTEN)
-      },
+      provider: () => new HDWalletProvider(process.env.MNEMONIC, process.env.INFURA_ROPSTEN),      
       network_id: 3
     },
     goerli: {

@@ -14,6 +14,7 @@ const deployCrowdclickOracle = async deployer => {
 }
 
 module.exports = function(deployer, network, accounts) {
+  if(network.id === 1000000) {
     deployer.then(async() => {
       const crowdclickOracle = await deployCrowdclickOracle(deployer)
       const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickOracle.address, minimumUsdWithdrawal, feePercentage, accounts[0])
@@ -22,4 +23,5 @@ module.exports = function(deployer, network, accounts) {
     }).catch(e => {
       console.error(e)
     })
+  }
 };
