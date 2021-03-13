@@ -1,12 +1,15 @@
+
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 
-const minimumUsdWithdrawal = 4
-const feePercentage = 10
-const mockEthPrice = 1967
+const currencyApi  = require("../dao/api")
+const config = require("../dao/environment")
+const { minimumUsdWithdrawal, feePercentage } = config.contractDeployment.crowdclickEscrow
 
 const deployCrowdclickMockOracle = async (deployer, accounts) => {
-  const crowdclickMockOracle = await deployer.deploy(CrowdclickMockOracle, mockEthPrice, accounts[0])
+  const currentEthPrice = await currencyApi.fetchEthToUSD()
+  console.log(`current ethereum price: ${currentEthPrice}`)
+  const crowdclickMockOracle = await deployer.deploy(CrowdclickMockOracle, currentEthPrice, accounts[0])
   return crowdclickMockOracle
 }
 

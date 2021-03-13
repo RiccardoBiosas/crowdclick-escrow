@@ -19,12 +19,13 @@
     "url": "git+https://github.com/RiccardoBiosas/crowdclick-client"
   },
   "keywords": [],
-  "author": "",
+  "author": "Riccardo Biosas - rbios@protonmail.com",
   "license": "ISC",
   "dependencies": {
     "@chainlink/contracts": "^0.0.12",
     "@openzeppelin/contracts": "^2.5.1",
     "@truffle/hdwallet-provider": "^1.0.34",
+    "axios": "^0.21.1",
     "chai": "^4.2.0",
     "dotenv": "^8.2.0",
     "eth-json-rpc-filters": "^4.1.1",

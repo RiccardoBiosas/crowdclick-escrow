@@ -1,3 +1,6 @@
+const { networkAddresses } = require("./environment")
+const config = require("./environment")
+
 const crowdclickEscrowData = {
     mockCampaigns: [
         {
@@ -8,29 +11,24 @@ const crowdclickEscrowData = {
           isActive: true
         }
     ],
-    minimumUsdWithdrawal: 4,
-    campaignFee: 10
+    minimumUsdWithdrawal: config.contractDeployment.crowdclickEscrow.minimumUsdWithdrawal,
+    campaignFee: config.contractDeployment.crowdclickEscrow.feePercentage
 }
   
-const crowdclickMockOracleData = {
-    mockEthPrice: 2000
-}
-
-const crowdclickChainlinkOracleData = {
-    chainlinkAggregatorRinkebyAddress: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e',
+const crowdclickChainlinkOracleData = Object.freeze({
+    chainlinkAggregatorRinkebyAddress: networkAddresses.chainlinkAggregatorAddress,
     startTracking: ~~(Date.now() / 1000),
-    trackingInterval: 60 * 60 * 24 // time interval = 1 day
-}
+    trackingInterval: config.contractDeployment.crowdclickOracle.trackingInterval
+})
 
-const CAMPAIGN_OPERATION = {
+const CAMPAIGN_OPERATION = Object.freeze({
     CAMPAIGN_CREATION: 'CAMPAIGN_CREATION',
     FORWARD_REWARD: 'FORWARD_REWARD',
     CAMPAIGN_WITHDRAWAL: 'CAMPAIGN_WITHDRAWAL'  
-}
+})
 
 module.exports = {
     crowdclickEscrowData,
-    crowdclickMockOracleData,
     crowdclickChainlinkOracleData,
     CAMPAIGN_OPERATION
 }

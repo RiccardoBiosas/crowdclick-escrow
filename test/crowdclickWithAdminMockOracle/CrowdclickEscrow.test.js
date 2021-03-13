@@ -3,10 +3,7 @@ const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 const { assert } = require('chai')
 const { fromE18, approximateEquality, updateCampaign, calculateFee, toE18Campaign } = require('../../dao/helpers')
 const { crowdclickEscrowData, crowdclickMockOracleData, CAMPAIGN_OPERATION } = require('../../dao/constants')
-
-const {
-    mockEthPrice
-} = crowdclickMockOracleData
+const currencyApi = require('../../dao/api')
 
 const { 
   mockCampaigns,
@@ -21,14 +18,15 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
   /** contracts */
   let crowdclickEscrow, crowdclickMockOracle
   /** contracts' values */
-  let crowdclickMockOracleAddress
+  let crowdclickMockOracleAddress, currentEthPrice
   /** balances */
   let publisherWalletBalance, userWalletBalance, feeCollectorWalletBalance, publisherContractBalance, userContractbalance
   let collectedFee = 0
   let currentCampaignsStatus = mockCampaigns
 
   before(async () => {
-    crowdclickMockOracle = await CrowdclickMockOracle.new(mockEthPrice, owner, { from: owner })
+    currentEthPrice = await currencyApi.fetchEthToUSD()
+    crowdclickMockOracle = await CrowdclickMockOracle.new(currentEthPrice, owner, { from: owner })
     crowdclickMockOracleAddress = crowdclickMockOracle.address
     crowdclickEscrow = await CrowdclickEscrow.new(crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner })
   })
@@ -36,7 +34,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
   
   context("Check deployment's data", () => {
       it('should show the mockEthPrice value as the currentEthUsdPrice', async() => {
-          assert.equal(fromE18((await crowdclickMockOracle.getEthUsdPriceFeed())), mockEthPrice, 'wrong pricefeed')
+          assert.equal(fromE18((await crowdclickMockOracle.getEthUsdPriceFeed())), currentEthPrice, 'wrong pricefeed')
         })
 
       it('should show 0 as the initial contract balance of the publisher', async () => {

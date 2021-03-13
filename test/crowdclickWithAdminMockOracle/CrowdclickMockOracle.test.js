@@ -1,11 +1,7 @@
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 const { assert } = require('chai')
 const { fromE18 } = require('../../dao/helpers')
-const { crowdclickMockOracleData } = require('../../dao/constants')
-
-const {
-    mockEthPrice
-} = crowdclickMockOracleData
+const currencyApi = require('../../dao/api')
 
 contract("CrowdclickMockOracle contract's tests", accounts => {
   const [ owner, user, newDataSource ] = accounts
@@ -13,10 +9,12 @@ contract("CrowdclickMockOracle contract's tests", accounts => {
   /** contracts */
   let crowdclickMockOracle
   /** contracts' values */
-  let latestPushedPricefeed = mockEthPrice
+  let latestPushedPricefeed
 
   before(async () => {
-    crowdclickMockOracle = await CrowdclickMockOracle.new(mockEthPrice, owner, { from: owner })
+    latestPushedPricefeed = await currencyApi.fetchEthToUSD()
+    console.log('latestPushedPricefeed', latestPushedPricefeed)
+    crowdclickMockOracle = await CrowdclickMockOracle.new(latestPushedPricefeed, owner, { from: owner })
   })
   
   context("Check deployment's data", () => {      
