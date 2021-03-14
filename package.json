@@ -12,7 +12,7 @@
     "test:rinkebyFork": "truffle test --network rinkebyFork",
     "test:goerliFork": "truffle test --network goerliFork",
     "migrate:goerli": "truffle migrate --network goerli",
-    "migate:mumbai": "truffle migrate --network mumbai"
+    "migrate:mumbai": "truffle migrate --network maticMumbai"
   },
   "repository": {
     "type": "git",

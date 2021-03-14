@@ -12,9 +12,13 @@ const APP_ENVIRONMENT = {
 }
 const environment = process.env.APP_ENVIRONMENT || APP_ENVIRONMENT.LOCAL
 const isProduction = environment === APP_ENVIRONMENT.PRODUCTION
+/**
+ * TODO:
+ * use a chainlink mock on local ganache environment
+ */
 const networkAddresses = {
     [APP_ENVIRONMENT.LOCAL]: {
-        chainlinkAggregatorAddress: ''
+        chainlinkAggregatorAddress: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e' // rinkeby
     },
     [APP_ENVIRONMENT.DEVELOPMENT]: {
         chainlinkAggregatorAddress: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e' // rinkeby
