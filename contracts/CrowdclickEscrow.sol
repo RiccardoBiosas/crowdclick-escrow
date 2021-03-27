@@ -206,6 +206,55 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
         collectedFee = 0;
     }
 
+    /**
+     * @notice Admin withdraws campaign's balance on publisher's behalf
+     */
+    function adminPublisherWithdrawal(
+        string calldata _campaignUrl,
+        address payable _publisherAddress
+        ) 
+        onlyOwner()
+        external
+        payable
+        nonReentrant
+    {
+        (uint256 campaignIndex, ) = helperSelectTask(_publisherAddress, _campaignUrl);
+        require(
+            taskCollection[_publisherAddress][campaignIndex].currentBudget > 0,
+            NOT_ENOUGH_CAMPAIGN_BALANCE
+        );
+        require(
+            publisherAccountBalance[_publisherAddress] >=
+                taskCollection[_publisherAddress][campaignIndex].currentBudget,
+            NOT_ENOUGH_PUBLISHER_BALANCE
+        );
+        taskCollection[_publisherAddress][campaignIndex].isActive = false;
+        publisherAccountBalance[_publisherAddress] = publisherAccountBalance[_publisherAddress]
+            .sub(taskCollection[_publisherAddress][campaignIndex].currentBudget);
+        uint256 currentCampaignBudget = taskCollection[_publisherAddress][campaignIndex]
+            .currentBudget;
+        taskCollection[_publisherAddress][campaignIndex].currentBudget = 0;
+        _publisherAddress.transfer(currentCampaignBudget);
+    }
+
+    /**
+     * @notice Admin withdraws user's balance on user's behalf
+     */
+    function adminUserWithdrawal(address payable _userAddress) 
+        onlyOwner()
+        external
+        payable
+        nonReentrant 
+    {
+        uint256 userBalance = userAccountBalance[_userAddress];
+        require(
+            userBalance > 0,
+            NOT_ENOUGH_USER_BALANCE
+        );
+        userAccountBalance[_userAddress] = 0;
+        _userAddress.transfer(userBalance);
+    }
+
     /****************************************       
         PRIVATE FUNCTIONS        
     *****************************************/
