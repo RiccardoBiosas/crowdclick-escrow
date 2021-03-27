@@ -8,14 +8,14 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 contract CrowdclickMockOracle is Ownable {
     using SafeMath for uint256;
 
-    uint256 private currentEthUsdPrice;
+    uint256 private currentUnderlyingPrice;
     uint256 private multiplier = 10 ** 18;
 
     address public dataSource;
 
-    constructor(uint256 _currentEthUsdPrice, address _dataSource) public {
-        require(_currentEthUsdPrice > 0, 'NOT_GREATER_THAN_0');
-        currentEthUsdPrice = _currentEthUsdPrice.mul(multiplier);
+    constructor(uint256 _currentUnderlyingPrice, address _dataSource) public {
+        require(_currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
+        currentUnderlyingPrice = _currentUnderlyingPrice.mul(multiplier);
         dataSource = _dataSource;
     }
 
@@ -23,14 +23,14 @@ contract CrowdclickMockOracle is Ownable {
         dataSource = _dataSource;
     }
 
-    function adminPushEthUSDPrice(uint256 _currentEthUSDPrice) external {
+    function adminPushUnderlyingUSDPrice(uint256 _currentUnderlyingPrice) external {
         require(msg.sender == dataSource, 'NOT_DATASOURCE');
-        require(_currentEthUSDPrice > 0, 'NOT_GREATER_THAN_0');
-        currentEthUsdPrice = _currentEthUSDPrice.mul(multiplier);
+        require(_currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
+        currentUnderlyingPrice = _currentUnderlyingPrice.mul(multiplier);
     }
 
-    function getEthUsdPriceFeed() view external returns(uint256) {
-        require(currentEthUsdPrice > 0, 'NOT_GREATER_THAN_0');
-        return currentEthUsdPrice;
+    function getUnderlyingUsdPriceFeed() view external returns(uint256) {
+        require(currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
+        return currentUnderlyingPrice;
     }    
 }

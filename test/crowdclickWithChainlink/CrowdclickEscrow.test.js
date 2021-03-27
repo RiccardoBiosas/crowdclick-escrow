@@ -2,13 +2,15 @@ const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickOracle = artifacts.require('CrowdclickOracle')
 const { assert } = require('chai')
 const { fromE18, approximateEquality, updateCampaign, calculateFee, toE18Campaign } = require('../../dao/helpers')
-const { crowdclickEscrowData, crowdclickChainlinkOracleData , CAMPAIGN_OPERATION } = require('../../dao/constants')
+const { crowdclickEscrowData, CAMPAIGN_OPERATION } = require('../../dao/constants')
+const { getCrowdclickChainlinkOracleEnv } = require('../../dao/helpers')
+const config = require('../../dao/environment')
 
 const {
-  chainlinkAggregatorRinkebyAddress, 
+  chainlink, 
   startTracking, 
   trackingInterval 
-} = crowdclickChainlinkOracleData
+} = getCrowdclickChainlinkOracleEnv(config.networkEnvironment)
 
 const { 
   mockCampaigns,
@@ -28,9 +30,9 @@ contract('CrowdclickEscrow contract with CrowdclickOracle (with chainlink) as a 
 
 
   before(async () => {
-    crowdclickOracle = await CrowdclickOracle.new(chainlinkAggregatorRinkebyAddress, startTracking, trackingInterval, { from: owner })
-    crowdclickOracleAddress = crowdclickOracle.address
-    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner })
+      crowdclickOracle = await CrowdclickOracle.new(chainlink, startTracking, trackingInterval, { from: owner })
+      crowdclickOracleAddress = crowdclickOracle.address
+      crowdclickEscrow = await CrowdclickEscrow.new(crowdclickOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner })
   })
 
   context("Check deployment's data", () => {
@@ -101,13 +103,13 @@ context("CrowdclickEscrow's lifecycle", () => {
   
     it("should allow the user to withdraw their earned balance", async () => {
       const campaign = toE18Campaign(currentCampaignsStatus[0])
-      userWalletBalance = fromE18(await web3.eth.getBalance(user)) + userContractbalance
+      userWalletBalance = fromE18(await web3.eth.getBalance(user)) +userContractbalance
       await crowdclickEscrow.withdrawUserBalance(
         campaign.taskReward,
         { from: user }
       )
       assert.isTrue(
-        approximateEquality(fromE18(await web3.eth.getBalance(user)), userWalletBalance, 0.003)
+        approximateEquality(fromE18(await web3.eth.getBalance(user)),userWalletBalance, 0.003)
       )
     })
   

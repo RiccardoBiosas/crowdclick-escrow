@@ -15,10 +15,12 @@ const deployCrowdclickMockOracle = async (deployer, accounts) => {
 
 module.exports = function(deployer, network, accounts) {
   deployer.then(async() => {
-    const crowdclickMockOracle = await deployCrowdclickMockOracle(deployer, accounts)
-    const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickMockOracle.address, minimumUsdWithdrawal, feePercentage, accounts[0])
-    console.log(`CrowdclickMockOracle address: ${crowdclickMockOracle.address}`)
-    console.log(`crowdclickEscrow address: ${crowdclickEscrow.address}`)
+    if(config.networkEnvironment === config.NETWORK_ENVIRONMENT.RINKEBY && config.isProduction) {
+      const crowdclickMockOracle = await deployCrowdclickMockOracle(deployer, accounts)
+      const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickMockOracle.address, minimumUsdWithdrawal, feePercentage, accounts[0])
+      console.log(`CrowdclickMockOracle address: ${crowdclickMockOracle.address}`)
+      console.log(`crowdclickEscrow address: ${crowdclickEscrow.address}`)
+    }
   }).catch(e => {
     console.error(e)
   })

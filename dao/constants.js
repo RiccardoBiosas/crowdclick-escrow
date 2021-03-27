@@ -1,4 +1,3 @@
-const { networkAddresses } = require("./environment")
 const config = require("./environment")
 
 const crowdclickEscrowData = {
@@ -15,12 +14,6 @@ const crowdclickEscrowData = {
     campaignFee: config.contractDeployment.crowdclickEscrow.feePercentage
 }
   
-const crowdclickChainlinkOracleData = Object.freeze({
-    chainlinkAggregatorRinkebyAddress: networkAddresses.chainlinkAggregatorAddress,
-    startTracking: ~~(Date.now() / 1000),
-    trackingInterval: config.contractDeployment.crowdclickOracle.trackingInterval
-})
-
 const CAMPAIGN_OPERATION = Object.freeze({
     CAMPAIGN_CREATION: 'CAMPAIGN_CREATION',
     FORWARD_REWARD: 'FORWARD_REWARD',
@@ -29,6 +22,5 @@ const CAMPAIGN_OPERATION = Object.freeze({
 
 module.exports = {
     crowdclickEscrowData,
-    crowdclickChainlinkOracleData,
     CAMPAIGN_OPERATION
 }

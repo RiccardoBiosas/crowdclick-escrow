@@ -231,15 +231,15 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
     function calculateWeiUsdPricefeed(uint256 _weiAmount) private returns(uint256) {
         require(_weiAmount > 0, VALUE_NOT_GREATER_THAN_0);
         /** fetches current eth/usd pricefeed */
-        uint256 currentEthPrice = crowdclickOracle.getEthUsdPriceFeed();
+        uint256 currentUnderlyingPrice = crowdclickOracle.getUnderlyingUsdPriceFeed();
         /** adjusts the 8decimals-long eth/usd pricefeed and adjusts by multiplier */
-        uint256 adjustedCurrentEthPrice = (currentEthPrice.div(100000000)).mul(multiplier);
+        uint256 adjustedCurrentUnderlyingPrice = (currentUnderlyingPrice.div(100000000)).mul(multiplier);
         /** adjusts the 18decimals-long wei value and adjusts by multiplier */
         uint256 adjustedEthAmount = adjustByDivider(adjustByMultiplier(_weiAmount));
         /** one-millionth */
-        uint256 sliceOfWholeEth = adjustedCurrentEthPrice.div(adjustedEthAmount);
+        uint256 sliceOfWholeEth = adjustedCurrentUnderlyingPrice.div(adjustedEthAmount);
         /** adjusted wei/usd pricefeed */
-        return adjustedCurrentEthPrice.div(sliceOfWholeEth);
+        return adjustedCurrentUnderlyingPrice.div(sliceOfWholeEth);
     }
 
     function calculateFee(uint256 _amount) private returns(uint256) {

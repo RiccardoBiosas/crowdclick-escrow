@@ -11,8 +11,11 @@
     "test:develop": "truffle test --network develop",
     "test:rinkebyFork": "truffle test --network rinkebyFork",
     "test:goerliFork": "truffle test --network goerliFork",
+    "test:bsc": "truffle test --network bscMainnet",
     "migrate:goerli": "truffle migrate --network goerli",
-    "migrate:mumbai": "truffle migrate --network maticMumbai"
+    "migrate:mumbai": "truffle migrate --network maticMumbai",
+    "migrate:bscTest": "truffle migrate --network bscTestnet",
+    "migrate:bscMainnet": "truffle migrate --network bscMainnet"
   },
   "repository": {
     "type": "git",

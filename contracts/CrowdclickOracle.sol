@@ -29,7 +29,7 @@ contract CrowdclickOracle is Ownable, CrowdclickOracleErrors, ReentrancyGuard {
         trackingInterval = _trackingInterval;
     }
 
-    function getEthUsdPriceFeed() external nonReentrant returns(uint256) {
+    function getUnderlyingUsdPriceFeed() external nonReentrant returns(uint256) {
         if (now > startTracking.add(trackingInterval)) {
             currentEthUsdPrice = getOraclePriceFeed();
             startTracking = now;

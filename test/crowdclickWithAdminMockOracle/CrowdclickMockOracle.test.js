@@ -19,7 +19,7 @@ contract("CrowdclickMockOracle contract's tests", accounts => {
   
   context("Check deployment's data", () => {      
     it('should check the contract was initialized with the expected values', async() => {
-        assert.equal(fromE18((await crowdclickMockOracle.getEthUsdPriceFeed())), latestPushedPricefeed, 'wrong pricefeed')
+        assert.equal(fromE18((await crowdclickMockOracle.getUnderlyingUsdPriceFeed())), latestPushedPricefeed, 'wrong pricefeed')
         assert.equal(await crowdclickMockOracle.dataSource.call(), owner, 'wrong dataSource')
     })
   })
@@ -28,18 +28,18 @@ contract("CrowdclickMockOracle contract's tests", accounts => {
       it('should fail: non-dataSource should not be able to update the pricefeed', async() => {
           latestPushedPricefeed = 2100
           try {
-            await crowdclickMockOracle.adminPushEthUSDPrice(latestPushedPricefeed, { from: user })
+            await crowdclickMockOracle.adminPushUnderlyingUSDPrice(latestPushedPricefeed, { from: user })
           } catch(e) {
             assert.equal(e.reason, 'NOT_DATASOURCE')
           }
       })
 
       it('should succeed: dataSource updates pricefeed', async() => {
-        await crowdclickMockOracle.adminPushEthUSDPrice(latestPushedPricefeed, { from: owner })
+        await crowdclickMockOracle.adminPushUnderlyingUSDPrice(latestPushedPricefeed, { from: owner })
       })
 
       it('should retrieve the updated pricefeed', async() => {
-        assert.equal(fromE18((await crowdclickMockOracle.getEthUsdPriceFeed())), latestPushedPricefeed, 'wrong pricefeed')
+        assert.equal(fromE18((await crowdclickMockOracle.getUnderlyingUsdPriceFeed())), latestPushedPricefeed, 'wrong pricefeed')
       })
 
       it('should fail: non-owner cannot change the dataSource', async() => {
@@ -62,18 +62,18 @@ contract("CrowdclickMockOracle contract's tests", accounts => {
       it('should fail: previous dataSource cannot update the pricefeed', async() => {
         latestPushedPricefeed = 2200
         try {
-          await crowdclickMockOracle.adminPushEthUSDPrice(latestPushedPricefeed, { from: owner })
+          await crowdclickMockOracle.adminPushUnderlyingUSDPrice(latestPushedPricefeed, { from: owner })
         } catch(e) {
           assert.equal(e.reason, 'NOT_DATASOURCE')
         }
       })
 
       it('should succeed: new dataSource updates pricefeed', async() => {
-        await crowdclickMockOracle.adminPushEthUSDPrice(latestPushedPricefeed, { from: newDataSource })
+        await crowdclickMockOracle.adminPushUnderlyingUSDPrice(latestPushedPricefeed, { from: newDataSource })
       })
 
       it('should retrieve the updated pricefeed', async() => {
-        assert.equal(fromE18((await crowdclickMockOracle.getEthUsdPriceFeed())), latestPushedPricefeed, 'wrong pricefeed')
+        assert.equal(fromE18((await crowdclickMockOracle.getUnderlyingUsdPriceFeed())), latestPushedPricefeed, 'wrong pricefeed')
       })
   })
 })

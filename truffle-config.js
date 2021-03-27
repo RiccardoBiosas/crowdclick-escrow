@@ -31,12 +31,28 @@ module.exports = {
       provider: () => new HDWalletProvider(process.env.MNEMONIC, process.env.INFURA_GOERLI),
       network_id: 5
     },
-    maticMumbai: {
+    mumbai: {
       provider: () => new HDWalletProvider(process.env.MNEMONIC, `https://rpc-mumbai.matic.today`),
       network_id: 80001,
       confirmations: 2,
       timeoutBlocks: 200,
       skyDryRun: true
+    },
+    bscMainnet: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC, `https://bsc-dataseed1.binance.org`),
+      network_id: 56,
+      confirmations: 10,
+      timeoutBlocks: 200,
+      skipDryRun: true
+    },
+    bscTestnet: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC, `https://data-seed-prebsc-1-s1.binance.org:8545`),
+      network_id: 97,
+      confirmations: 10,
+      timeoutBlocks: 2000,
+      skipDryRun: true,
+      gas: 5000000,
+      gasPrice: 25000000000,
     },
   },
   mocha: {
