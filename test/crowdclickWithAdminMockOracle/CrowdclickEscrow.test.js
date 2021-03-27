@@ -13,14 +13,14 @@ const {
 
 
 contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source', accounts => {
-  const [ owner, publisher, user, feeCollector ] = accounts
+  const [ owner, publisher, user, feeCollector, secondUser ] = accounts
 
   /** contracts */
   let crowdclickEscrow, crowdclickMockOracle
   /** contracts' values */
   let crowdclickMockOracleAddress, currentEthPrice
   /** balances */
-  let publisherWalletBalance, userWalletBalance, feeCollectorWalletBalance, publisherContractBalance, userContractbalance
+  let publisherWalletBalance, userWalletBalance, feeCollectorWalletBalance, publisherContractBalance, userContractbalance, secondUserContractBalance, secondUserWalletBalance
   let collectedFee = 0
   let currentCampaignsStatus = mockCampaigns
 
@@ -173,6 +173,78 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
               ),
               'wrong feeCollector balance'
           )
+      })
+
+      it('publisher creates a second campaign successfully', async() => {
+        const campaign = currentCampaignsStatus[1]
+        const e18Campaign = toE18Campaign(campaign)
+        await crowdclickEscrow.openTask(
+          e18Campaign.taskBudget,
+          e18Campaign.taskReward,
+          e18Campaign.url,
+          {
+            from: publisher,
+            value: e18Campaign.taskBudget
+          }
+        )
+
+        const updatedCampaign = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.CAMPAIGN_CREATION)
+        currentCampaignsStatus[1] = updatedCampaign
+        publisherContractBalance = updatedCampaign.currentBudget
+  
+        assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisher balance')   
+      })
+
+      it(`it should forward the reward for the newly created task and update the user's balance accordingly`, async() => {
+        const campaign =  currentCampaignsStatus[1]
+        await crowdclickEscrow.forwardRewards(
+          secondUser,
+          publisher,
+          campaign.url,
+          {
+            from: owner
+          }
+        )
+        secondUserContractBalance = campaign.taskReward
+        publisherContractBalance -= campaign.taskReward
+        currentCampaignsStatus[1] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD)
+        assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance, 'wrong user balance')
+      })
+
+      it(`admin should be able to to close a campaign and forward to the publisher the remaining campaign's balance on publisher's behalf`, async () => {
+        publisherWalletBalance = 
+        fromE18(await web3.eth.getBalance(publisher)) +
+        publisherContractBalance
+
+        const campaign =  currentCampaignsStatus[1]
+        await crowdclickEscrow.adminPublisherWithdrawal(
+          campaign.url,
+          publisher,
+          {
+            from: owner
+          }
+        )
+
+        assert.equal(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), 0, `wrong publisher contract's balance`)
+        assert.isTrue(
+          approximateEquality(
+              fromE18(await web3.eth.getBalance(publisher)),
+              publisherWalletBalance,
+            0.003
+          ),
+          `wrong publisher wallet's balance`
+        )
+      })
+
+      it(`admin should be able to to forward all the user's earned rewards on user's behalf`, async () => {
+        secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance
+        await crowdclickEscrow.adminUserWithdrawal(
+          secondUser,
+          { from: owner }
+        )
+        assert.isTrue(
+          approximateEquality(fromE18(await web3.eth.getBalance(secondUser)),secondUserWalletBalance, 0.003)
+        )
       })
   })
 })
