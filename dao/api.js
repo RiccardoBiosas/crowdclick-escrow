@@ -13,6 +13,11 @@ class CurrencyApi {
       const response = await coingecko.get('simple/price?ids=ethereum&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false&include_24hr_change=false&include_last_updated_at=false')
       return Math.floor(response.data.ethereum.usd)
     }
+
+  static async fetchBNBToUSD() {
+    const response = await coingecko.get('simple/price?ids=binancecoin&vs_currencies=usd&include_market_cap=false&include_24hr_vol=false&include_24hr_change=falseinclude_last_updated_at=false')
+    return Math.floor(response.data.binancecoin.usd)
+  }
 }
 
 module.exports = CurrencyApi

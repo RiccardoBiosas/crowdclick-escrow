@@ -2,13 +2,15 @@ const CrowdclickOracle = artifacts.require('CrowdclickOracle')
 const truffleAssert = require('truffle-assertions')
 const { time } = require('@openzeppelin/test-helpers')
 const { assert } = require('chai')
-const { crowdclickChainlinkOracleData } = require('../../dao/constants')
+const { getCrowdclickChainlinkOracleEnv } = require('../../dao/helpers')
+const config = require('../../dao/environment')
 
 const {
-  chainlinkAggregatorRinkebyAddress, 
+  chainlink, 
   startTracking, 
   trackingInterval 
-} = crowdclickChainlinkOracleData
+} = getCrowdclickChainlinkOracleEnv(config.networkEnvironment)
+
 
 contract("CrowdclickOracle (with chainlink) contract's tests", accounts =>
 {
@@ -20,17 +22,17 @@ contract("CrowdclickOracle (with chainlink) contract's tests", accounts =>
   let latestEthPrice, updatedTrackingInterval, currentStartTracking
 
   before(async () => {
-    crowdclickOracle = await CrowdclickOracle.new(chainlinkAggregatorRinkebyAddress, startTracking, trackingInterval, { from: owner })
+    crowdclickOracle = await CrowdclickOracle.new(chainlink, startTracking, trackingInterval, { from: owner })
   })
 
   it('should check the contract was initialized with the expected values', async() => {
     assert.equal((await crowdclickOracle.startTracking.call()).toString(), startTracking)
     assert.equal((await crowdclickOracle.trackingInterval.call()).toString(), trackingInterval)
-    assert.isNotNull((await crowdclickOracle.getEthUsdPriceFeed.call()).toString())
+    assert.isNotNull((await crowdclickOracle.getUnderlyingUsdPriceFeed.call()).toString())
   })
 
   it('should return the cached result if trackingInterval is not expired', async() => {
-    const tx = await crowdclickOracle.getEthUsdPriceFeed()
+    const tx = await crowdclickOracle.getUnderlyingUsdPriceFeed()
     await truffleAssert.eventEmitted(tx, 'PricefeedUpdate', ev => {
         console.log(`was cached: ${ev.wasCached}, value: ${ev.value.toString()}`)
         return ev.wasCached === true
@@ -40,7 +42,7 @@ contract("CrowdclickOracle (with chainlink) contract's tests", accounts =>
   it("should update the pricefeed via chainlink oracle's request after the trackingInterval expires", async() => {
     await time.increase(trackingInterval + 1)
     currentStartTracking = +(await time.latest()).toString()
-    const tx = await crowdclickOracle.getEthUsdPriceFeed()
+    const tx = await crowdclickOracle.getUnderlyingUsdPriceFeed()
     await truffleAssert.eventEmitted(tx, 'PricefeedUpdate', ev => {
         console.log(`was cached: ${ev.wasCached}, value: ${ev.value.toString()}`)
         return ev.wasCached === false

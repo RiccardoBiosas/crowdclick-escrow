@@ -34,7 +34,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
   
   context("Check deployment's data", () => {
       it('should show the mockEthPrice value as the currentEthUsdPrice', async() => {
-          assert.equal(fromE18((await crowdclickMockOracle.getEthUsdPriceFeed())), currentEthPrice, 'wrong pricefeed')
+          assert.equal(fromE18((await crowdclickMockOracle.getUnderlyingUsdPriceFeed())), currentEthPrice, 'wrong pricefeed')
         })
 
       it('should show 0 as the initial contract balance of the publisher', async () => {

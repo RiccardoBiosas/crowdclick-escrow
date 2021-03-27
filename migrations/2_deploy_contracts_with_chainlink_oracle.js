@@ -1,14 +1,14 @@
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickOracle = artifacts.require('CrowdclickOracle')
-
 const config = require("../dao/environment")
+
 const { minimumUsdWithdrawal, feePercentage } = config.contractDeployment.crowdclickEscrow
 const { trackingInterval } = config.contractDeployment.crowdclickOracle
-const { chainlinkAggregatorAddress } = config.networkAddresses
+const { chainlink } = config.networkContracts[config.networkEnvironment]
 const startTracking = ~~(Date.now() / 1000)
 
 const deployCrowdclickOracle = async deployer => {
-  const crowdclickOracle = await deployer.deploy(CrowdclickOracle, chainlinkAggregatorAddress, startTracking, trackingInterval)
+  const crowdclickOracle = await deployer.deploy(CrowdclickOracle, chainlink, startTracking, trackingInterval)
   return crowdclickOracle
 }
 
