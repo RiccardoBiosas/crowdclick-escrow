@@ -59,6 +59,7 @@ context("CrowdclickEscrow's lifecycle", () => {
       const campaign = currentCampaignsStatus[0]
       const e18Campaign = toE18Campaign(campaign)
       await crowdclickEscrow.openTask(
+        campaign.uuid,
         e18Campaign.taskBudget,
         e18Campaign.taskReward,
         e18Campaign.url,
@@ -86,7 +87,7 @@ context("CrowdclickEscrow's lifecycle", () => {
       await crowdclickEscrow.forwardRewards(
         user,
         publisher,
-        campaign.url,
+        campaign.uuid,
         {
           from: owner
         }
@@ -114,9 +115,9 @@ context("CrowdclickEscrow's lifecycle", () => {
     })
   
     it('should show the correct campaign stats given the url associated to the campaign', async () => {
-      const campaign = currentCampaignsStatus[0]
+      const { uuid, ...campaign } = currentCampaignsStatus[0]
       const fetchedCampaign = await crowdclickEscrow.lookupTask(
-          campaign.url,
+          uuid,
         {
           from: publisher
         }
@@ -136,7 +137,7 @@ context("CrowdclickEscrow's lifecycle", () => {
       publisherWalletBalance = 
         fromE18(await web3.eth.getBalance(publisher)) +
         publisherContractBalance
-      await crowdclickEscrow.withdrawFromCampaign(campaign.url, {
+      await crowdclickEscrow.withdrawFromCampaign(campaign.uuid, {
         from: publisher
       })
       assert.isTrue(

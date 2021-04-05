@@ -19,7 +19,7 @@ contract("CrowdclickOracle (with chainlink) contract's tests", accounts =>
   /** contracts */
   let crowdclickOracle
   /** contracts' values */
-  let latestEthPrice, updatedTrackingInterval, currentStartTracking
+  let updatedTrackingInterval, currentStartTracking
 
   before(async () => {
     crowdclickOracle = await CrowdclickOracle.new(chainlink, startTracking, trackingInterval, { from: owner })

@@ -22,7 +22,7 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
         bool isActive;
     }
 
-    mapping(address => Task[]) private taskCollection;
+    mapping(address => mapping(string => Task)) taskCollection;
     mapping(address => uint256) private publisherAccountBalance;
     mapping(address => uint256) private userAccountBalance;
 
@@ -53,6 +53,7 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
     *****************************************/
 
     function openTask(
+        string calldata _uuid,
         uint256 _taskBudget,
         uint256 _taskReward,
         string calldata _campaignUrl
@@ -68,7 +69,7 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
         taskInstance.currentBudget = _taskBudget.sub(fee);
         taskInstance.isActive = true;
         taskInstance.url = _campaignUrl;
-        taskCollection[msg.sender].push(taskInstance);
+        taskCollection[msg.sender][_uuid] = taskInstance;
         /** publisher balance + taskBudget - fee */
         publisherAccountBalance[msg.sender] = publisherAccountBalance[msg
             .sender]
@@ -115,83 +116,82 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
         msg.sender.transfer(withdrawAmount);
     }
 
-    function withdrawFromCampaign(string calldata _campaignUrl)
+    function withdrawFromCampaign(string calldata _uuid)
         external
         payable
         nonReentrant
     {
-        (uint256 campaignIndex, ) = helperSelectTask(msg.sender, _campaignUrl);
+        Task memory taskInstance = _selectTask(msg.sender, _uuid);
         require(
-            taskCollection[msg.sender][campaignIndex].currentBudget > 0,
+            taskInstance.currentBudget > 0,
             NOT_ENOUGH_CAMPAIGN_BALANCE
         );
         require(
             publisherAccountBalance[msg.sender] >=
-                taskCollection[msg.sender][campaignIndex].currentBudget,
+                taskInstance.currentBudget,
             NOT_ENOUGH_PUBLISHER_BALANCE
         );
-        taskCollection[msg.sender][campaignIndex].isActive = false;
+        taskInstance.isActive = false;
         publisherAccountBalance[msg.sender] = publisherAccountBalance[msg
             .sender]
-            .sub(taskCollection[msg.sender][campaignIndex].currentBudget);
-        uint256 currentCampaignBudget = taskCollection[msg
-            .sender][campaignIndex]
-            .currentBudget;
-        taskCollection[msg.sender][campaignIndex].currentBudget = 0;
+            .sub(taskInstance.currentBudget);
+        uint256 currentCampaignBudget = taskInstance.currentBudget;
+        taskInstance.currentBudget = 0;
         msg.sender.transfer(currentCampaignBudget);
     }
 
     /** look up task based on the campaign's url */
-    function lookupTask(string calldata _campaignUrl)
+    function lookupTask(string calldata _uuid)
         external
         view
         returns (Task memory task)
     {
-        (uint256 campaignIndex, ) = helperSelectTask(msg.sender, _campaignUrl);
-        return taskCollection[msg.sender][campaignIndex];
+        Task memory taskInstance = _selectTask(msg.sender, _uuid);
+        return taskInstance;
     }
 
-    /** forward rewards */
+    /**
+     * @notice Admin-only forward rewards from task's balance to user's contract balance
+     */
     function forwardRewards(
         address _userAddress,
         address _publisherAddress,
-        string calldata _campaignUrl
+        string calldata _uuid
     ) external 
       payable 
       onlyOwner()
       nonReentrant
     {
-        (uint256 campaignIndex, ) = helperSelectTask(
+        Task storage taskInstance = _selectTask(
             _publisherAddress,
-            _campaignUrl
+            _uuid
         );
         require(
-            taskCollection[_publisherAddress][campaignIndex].isActive,
+            taskInstance.isActive,
             CAMPAIGN_NOT_ACTIVE
         );
         require(
             publisherAccountBalance[_publisherAddress] >
-                taskCollection[_publisherAddress][campaignIndex].taskReward,
+                taskInstance.taskReward,
             NOT_ENOUGH_PUBLISHER_BALANCE
         );
         /** decreases campaign task's current budget by campaign's reward */
-        taskCollection[_publisherAddress][campaignIndex]
-            .currentBudget = taskCollection[_publisherAddress][campaignIndex]
-            .currentBudget
-            .sub(taskCollection[_publisherAddress][campaignIndex].taskReward);
+        taskInstance
+            .currentBudget = taskInstance.currentBudget
+            .sub(taskInstance.taskReward);
         /** decreases the balance of the campaign's owner by the campaign's reward */
         publisherAccountBalance[_publisherAddress] = publisherAccountBalance[_publisherAddress]
-            .sub(taskCollection[_publisherAddress][campaignIndex].taskReward);
+            .sub(taskInstance.taskReward);
         /** increases the user's balance by the campaign's rewrd */
         userAccountBalance[_userAddress] = userAccountBalance[_userAddress].add(
-            taskCollection[_publisherAddress][campaignIndex].taskReward
+            taskInstance.taskReward
         );
         /** if the updated campaign's current budget is less than the campaign's reward, then the campaign is not active anymore */
         if (
             publisherAccountBalance[_publisherAddress] <=
-            taskCollection[_publisherAddress][campaignIndex].taskReward
+            taskInstance.taskReward
         ) {
-            taskCollection[_publisherAddress][campaignIndex].isActive = false;
+            taskInstance.isActive = false;
         }
     }
 
@@ -210,7 +210,7 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
      * @notice Admin withdraws campaign's balance on publisher's behalf
      */
     function adminPublisherWithdrawal(
-        string calldata _campaignUrl,
+        string calldata _uuid,
         address payable _publisherAddress
         ) 
         onlyOwner()
@@ -218,22 +218,21 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
         payable
         nonReentrant
     {
-        (uint256 campaignIndex, ) = helperSelectTask(_publisherAddress, _campaignUrl);
+        Task memory taskInstance = _selectTask(_publisherAddress, _uuid);
         require(
-            taskCollection[_publisherAddress][campaignIndex].currentBudget > 0,
+            taskInstance.currentBudget > 0,
             NOT_ENOUGH_CAMPAIGN_BALANCE
         );
         require(
             publisherAccountBalance[_publisherAddress] >=
-                taskCollection[_publisherAddress][campaignIndex].currentBudget,
+                taskInstance.currentBudget,
             NOT_ENOUGH_PUBLISHER_BALANCE
         );
-        taskCollection[_publisherAddress][campaignIndex].isActive = false;
+        taskInstance.isActive = false;
         publisherAccountBalance[_publisherAddress] = publisherAccountBalance[_publisherAddress]
-            .sub(taskCollection[_publisherAddress][campaignIndex].currentBudget);
-        uint256 currentCampaignBudget = taskCollection[_publisherAddress][campaignIndex]
-            .currentBudget;
-        taskCollection[_publisherAddress][campaignIndex].currentBudget = 0;
+            .sub(taskInstance.currentBudget);
+        uint256 currentCampaignBudget = taskInstance.currentBudget;
+        taskInstance.currentBudget = 0;
         _publisherAddress.transfer(currentCampaignBudget);
     }
 
@@ -260,21 +259,12 @@ contract CrowdclickEscrow is Ownable, CrowdclickEscrowErrors, ReentrancyGuard {
     *****************************************/
 
     /** retrieves correct task based on the address of the publisher and the campaign's url */
-    function helperSelectTask(address _address, string memory _campaignUrl)
+    function _selectTask(address _address, string memory _uuid)
         private
         view
-        returns (uint256, bool)
+        returns (Task storage task)
     {
-        uint256 indx = 0;
-        bool found = false;
-        for (uint256 i = 0; i < taskCollection[_address].length; i++) {
-            string memory url = taskCollection[_address][i].url;
-            if (keccak256(bytes(url)) == keccak256(bytes(_campaignUrl))) {
-                indx = i;
-                found = true;
-            }
-        }
-        return (indx, found);
+        return taskCollection[_address][_uuid];
     }
 
     function calculateWeiUsdPricefeed(uint256 _weiAmount) private returns(uint256) {

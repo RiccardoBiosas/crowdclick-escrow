@@ -11,7 +11,6 @@ const {
   campaignFee
 } = crowdclickEscrowData
 
-
 contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source', accounts => {
   const [ owner, publisher, user, feeCollector, secondUser ] = accounts
 
@@ -60,6 +59,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         const campaign = currentCampaignsStatus[0]
         const e18Campaign = toE18Campaign(campaign)
         await crowdclickEscrow.openTask(
+          campaign.uuid,
           e18Campaign.taskBudget,
           e18Campaign.taskReward,
           e18Campaign.url,
@@ -87,7 +87,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         await crowdclickEscrow.forwardRewards(
           user,
           publisher,
-          campaign.url,
+          campaign.uuid,
           {
             from: owner
           }
@@ -115,9 +115,9 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
       })
     
       it('should show the correct campaign stats given the url associated to the campaign', async () => {
-        const campaign = currentCampaignsStatus[0]
+        const { uuid, ...campaign } = currentCampaignsStatus[0]
         const fetchedCampaign = await crowdclickEscrow.lookupTask(
-            campaign.url,
+            uuid,
           {
             from: publisher
           }
@@ -137,7 +137,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         publisherWalletBalance = 
           fromE18(await web3.eth.getBalance(publisher)) +
           publisherContractBalance
-        await crowdclickEscrow.withdrawFromCampaign(campaign.url, {
+        await crowdclickEscrow.withdrawFromCampaign(campaign.uuid, {
           from: publisher
         })
         assert.isTrue(
@@ -179,6 +179,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         const campaign = currentCampaignsStatus[1]
         const e18Campaign = toE18Campaign(campaign)
         await crowdclickEscrow.openTask(
+          campaign.uuid,
           e18Campaign.taskBudget,
           e18Campaign.taskReward,
           e18Campaign.url,
@@ -200,7 +201,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         await crowdclickEscrow.forwardRewards(
           secondUser,
           publisher,
-          campaign.url,
+          campaign.uuid,
           {
             from: owner
           }
@@ -218,7 +219,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
 
         const campaign =  currentCampaignsStatus[1]
         await crowdclickEscrow.adminPublisherWithdrawal(
-          campaign.url,
+          campaign.uuid,
           publisher,
           {
             from: owner
