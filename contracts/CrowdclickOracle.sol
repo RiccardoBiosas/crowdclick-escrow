@@ -1,15 +1,22 @@
-pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/ownership/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 
 import "@chainlink/contracts/src/v0.5/interfaces/AggregatorV3Interface.sol";
 
 import "./constants/CrowdclickOracleErrors.sol";
 
-contract CrowdclickOracle is Ownable, CrowdclickOracleErrors, ReentrancyGuard {
+contract CrowdclickOracle is  
+    Initializable,
+    OwnableUpgradeable, 
+    CrowdclickOracleErrors, 
+    ReentrancyGuardUpgradeable 
+{
     using SafeMath for uint256;
 
     AggregatorV3Interface internal priceFeedOracle;
@@ -21,7 +28,12 @@ contract CrowdclickOracle is Ownable, CrowdclickOracleErrors, ReentrancyGuard {
     uint256 public startTracking;
     uint256 public trackingInterval;
 
-    constructor(address _priceFeedOracleAddress, uint256 _startTracking, uint256 _trackingInterval) public {
+    function initialize(
+        address _priceFeedOracleAddress, 
+        uint256 _startTracking, 
+        uint256 _trackingInterval
+    ) public {
+        __Ownable_init_unchained();
         priceFeedOracle = AggregatorV3Interface(_priceFeedOracleAddress);
         /** initialize eth/usd pricefeed */
         currentEthUsdPrice = getOraclePriceFeed();
@@ -30,9 +42,9 @@ contract CrowdclickOracle is Ownable, CrowdclickOracleErrors, ReentrancyGuard {
     }
 
     function getUnderlyingUsdPriceFeed() external nonReentrant returns(uint256) {
-        if (now > startTracking.add(trackingInterval)) {
+        if (block.timestamp > startTracking.add(trackingInterval)) {
             currentEthUsdPrice = getOraclePriceFeed();
-            startTracking = now;
+            startTracking = block.timestamp;
             emit PricefeedUpdate(currentEthUsdPrice, false);
             return currentEthUsdPrice;
         } else {

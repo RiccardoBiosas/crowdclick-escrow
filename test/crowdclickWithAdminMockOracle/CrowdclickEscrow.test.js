@@ -1,3 +1,4 @@
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 const { assert } = require('chai')
@@ -26,9 +27,11 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
 
   before(async () => {
     currentEthPrice = await currencyApi.fetchEthToUSD()
-    crowdclickMockOracle = await CrowdclickMockOracle.new(currentEthPrice, owner, { from: owner })
+    crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentEthPrice, owner], { owner })
     crowdclickMockOracleAddress = crowdclickMockOracle.address
-    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner })
+    console.log('crowdclickMockOracleAddress',crowdclickMockOracleAddress)
+    crowdclickEscrow = await deployProxy(CrowdclickEscrow,[crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee,feeCollector], { owner })
+ 
   })
 
   
