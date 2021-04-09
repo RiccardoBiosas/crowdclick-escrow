@@ -106,12 +106,8 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
       })
     
       it("should allow the user to withdraw their earned balance", async () => {
-        const campaign = toE18Campaign(currentCampaignsStatus[0])
         userWalletBalance = fromE18(await web3.eth.getBalance(user)) + userContractbalance
-        await crowdclickEscrow.withdrawUserBalance(
-          campaign.taskReward,
-          { from: user }
-        )
+        await crowdclickEscrow.withdrawUserBalance({ from: user })
         assert.isTrue(
           approximateEquality(fromE18(await web3.eth.getBalance(user)), userWalletBalance, 0.003)
         )

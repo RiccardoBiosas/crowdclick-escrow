@@ -30,6 +30,7 @@ contract CrowdclickEscrow is
     mapping(address => Task[]) private taskCollection;
     mapping(address => uint256) private publisherAccountBalance;
     mapping(address => uint256) private userAccountBalance;
+    mapping(address => uint256) public lastUserWithdrawalTime;
 
     // by default it converts to 18decimals /
     uint256 public divider;
@@ -37,6 +38,7 @@ contract CrowdclickEscrow is
     uint256 public multiplier;
     // base minimumUsdWithdrawal * multiplier /
     uint256 public minimumUsdWithdrawal;
+    uint256 public maximumWeiUserWithdrawal;
     uint256 public feePercentage;
     uint256 public collectedFee;
 
@@ -55,6 +57,7 @@ contract CrowdclickEscrow is
         feePercentage = _feePercentage;
         feeCollector = _feeCollector;
 
+        maximumWeiUserWithdrawal = 500000000000000000;
         divider = 10 ** 18;
         multiplier = 10 * 100000;
     }
@@ -104,24 +107,26 @@ contract CrowdclickEscrow is
         return userAccountBalance[_address];
     }
 
-    function withdrawUserBalance(uint256 withdrawAmount) 
+    function withdrawUserBalance() 
         external
         payable 
         nonReentrant {
-        uint256 withdrawAmountToUsd = calculateWeiUsdPricefeed(withdrawAmount);
-        // one-thousandth /
+        uint256 userWeiBalance = userAccountBalance[msg.sender];
+        uint256 userBalanceToUsd = calculateWeiUsdPricefeed(userWeiBalance);
+        require(block.timestamp >= lastUserWithdrawalTime[msg.sender] + 1 days, DAILY_WITHDRAWALS_EXCEEDED);
         require(
-            withdrawAmountToUsd >= minimumUsdWithdrawal.mul(1000),
-            LESS_THAN_MINIMUM_WITHDRAWAL
-        );
-        require(
-            userAccountBalance[msg.sender] >= withdrawAmount,
+            userBalanceToUsd >= minimumUsdWithdrawal.mul(1000),
             NOT_ENOUGH_USER_BALANCE
         );
-        userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(
-            withdrawAmount
-        );
-        payable(msg.sender).transfer(withdrawAmount);
+        if(userWeiBalance >= maximumWeiUserWithdrawal) {
+            userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(maximumWeiUserWithdrawal);
+            lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
+            payable(msg.sender).transfer(maximumWeiUserWithdrawal);
+        } else {
+            userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(userWeiBalance);
+            lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
+            payable(msg.sender).transfer(userWeiBalance);
+        }
     }
 
     function withdrawFromCampaign(string calldata _campaignUrl)
@@ -295,7 +300,7 @@ contract CrowdclickEscrow is
         return adjustedCurrentUnderlyingPrice.div(sliceOfWholeEth);
     }
 
-    function calculateFee(uint256 _amount) private returns(uint256) {
+    function calculateFee(uint256 _amount) view private returns(uint256) {
         require(_amount > 0, VALUE_NOT_GREATER_THAN_0);
         return _amount.mul(feePercentage).div(100);
     }

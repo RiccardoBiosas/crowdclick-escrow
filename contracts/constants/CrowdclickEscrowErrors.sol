@@ -20,4 +20,5 @@ contract CrowdclickEscrowErrors {
         internal constant VALUE_NOT_GREATER_THAN_0 = "VALUE_NOT_GREATER_THAN_0";
     string internal constant WRONG_CAMPAIGN_REWARD = "WRONG_CAMPAIGN_REWARD";
     string internal constant NOT_FEE_COLLECTOR = "NOT_FEE_COLLECTOR";
+    string internal constant DAILY_WITHDRAWALS_EXCEEDED = "DAILY_WITHDRAWALS_EXCEEDED";
 }
