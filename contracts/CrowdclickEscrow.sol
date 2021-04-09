@@ -47,8 +47,9 @@ contract CrowdclickEscrow is
         uint256 _minimumUsdWithdrawal,
         uint256 _feePercentage,
         address payable _feeCollector
-    ) public {
+    ) public initializer {
         __Ownable_init_unchained();
+        __ReentrancyGuard_init_unchained();
         crowdclickOracle = ICrowdclickOracle(_crowdclickOracleAddress);
         minimumUsdWithdrawal = _minimumUsdWithdrawal;
         feePercentage = _feePercentage;

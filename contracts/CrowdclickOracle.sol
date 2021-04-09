@@ -32,8 +32,9 @@ contract CrowdclickOracle is
         address _priceFeedOracleAddress, 
         uint256 _startTracking, 
         uint256 _trackingInterval
-    ) public {
+    ) public initializer {
         __Ownable_init_unchained();
+        __ReentrancyGuard_init_unchained();
         priceFeedOracle = AggregatorV3Interface(_priceFeedOracleAddress);
         /** initialize eth/usd pricefeed */
         currentEthUsdPrice = getOraclePriceFeed();
