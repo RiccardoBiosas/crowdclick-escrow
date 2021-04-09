@@ -1,3 +1,5 @@
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+const { time } = require('@openzeppelin/test-helpers')
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 const { assert } = require('chai')
@@ -25,9 +27,11 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
 
   before(async () => {
     currentEthPrice = await currencyApi.fetchEthToUSD()
-    crowdclickMockOracle = await CrowdclickMockOracle.new(currentEthPrice, owner, { from: owner })
+    crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentEthPrice, owner], { owner })
     crowdclickMockOracleAddress = crowdclickMockOracle.address
-    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner })
+    console.log('crowdclickMockOracleAddress',crowdclickMockOracleAddress)
+    crowdclickEscrow = await deployProxy(CrowdclickEscrow,[crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee,feeCollector], { owner })
+ 
   })
 
   
@@ -103,12 +107,8 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
       })
     
       it("should allow the user to withdraw their earned balance", async () => {
-        const campaign = toE18Campaign(currentCampaignsStatus[0])
         userWalletBalance = fromE18(await web3.eth.getBalance(user)) + userContractbalance
-        await crowdclickEscrow.withdrawUserBalance(
-          campaign.taskReward,
-          { from: user }
-        )
+        await crowdclickEscrow.withdrawUserBalance({ from: user })
         assert.isTrue(
           approximateEquality(fromE18(await web3.eth.getBalance(user)), userWalletBalance, 0.003)
         )
@@ -237,14 +237,96 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         )
       })
 
-      it(`admin should be able to to forward all the user's earned rewards on user's behalf`, async () => {
+      it(`admin should be able to forward all the user's earned rewards on user's behalf`, async () => {
         secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance
+        secondUserContractBalance = 0
         await crowdclickEscrow.adminUserWithdrawal(
           secondUser,
           { from: owner }
         )
         assert.isTrue(
           approximateEquality(fromE18(await web3.eth.getBalance(secondUser)),secondUserWalletBalance, 0.003)
+        )
+      })
+
+      it('publisher creates a third campaign with the same url as the first campaign', async() => {
+        const campaign = currentCampaignsStatus[2]
+        const e18Campaign = toE18Campaign(campaign)
+        await crowdclickEscrow.openTask(
+          campaign.uuid,
+          e18Campaign.taskBudget,
+          e18Campaign.taskReward,
+          e18Campaign.url,
+          {
+            from: publisher,
+            value: e18Campaign.taskBudget
+          }
+        )
+
+        const updatedCampaign = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.CAMPAIGN_CREATION)
+        currentCampaignsStatus[2] = updatedCampaign
+        publisherContractBalance = updatedCampaign.currentBudget
+  
+        assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisher balance')   
+      })
+
+      it(`it should forward the third campaign's reward to secondUser, update secondUser's contract balance accordingly and allow secondUser to withdraw to their wallet`, async() => {
+        const campaign =  currentCampaignsStatus[2]
+        await crowdclickEscrow.forwardRewards(
+          secondUser,
+          publisher,
+          campaign.uuid,
+          {
+            from: owner
+          }
+        )
+        secondUserContractBalance += campaign.taskReward
+        publisherContractBalance -= campaign.taskReward
+        currentCampaignsStatus[2] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD)
+        assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance, 'wrong user balance')
+
+        secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance
+        await crowdclickEscrow.withdrawUserBalance({ from: secondUser })
+        secondUserContractBalance = 0
+        assert.isTrue(
+          approximateEquality(fromE18(await web3.eth.getBalance(secondUser)), secondUserWalletBalance, 0.003)
+        )
+      })
+
+      it(`should fail: user tries to withdraw twice in the same day`, async() => {
+        try {
+          const campaign =  currentCampaignsStatus[2]
+          await crowdclickEscrow.forwardRewards(
+            secondUser,
+            publisher,
+            campaign.uuid,
+            {
+              from: owner
+            }
+          )
+          secondUserContractBalance += campaign.taskReward
+          publisherContractBalance -= campaign.taskReward
+          currentCampaignsStatus[2] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD)
+          assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance, 'wrong user balance')
+          secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance
+          await crowdclickEscrow.withdrawUserBalance({ from: secondUser })
+          assert.isTrue(
+            approximateEquality(fromE18(await web3.eth.getBalance(secondUser)), secondUserWalletBalance, 0.003)
+          )
+        } catch(error) {
+          assert.equal(error.reason, 'DAILY_WITHDRAWALS_EXCEEDED')
+        }
+      })
+
+      it(`secondUser can withdraw again after one day since the last withdrawal`, async() => {
+        const aBitMoreThanAday = (60 * 60 * 26)
+        const target = +(await time.latest()).toString() + aBitMoreThanAday
+        await time.increase(target)
+        secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance
+        await crowdclickEscrow.withdrawUserBalance({ from: secondUser })
+        secondUserContractBalance = 0
+        assert.isTrue(
+          approximateEquality(fromE18(await web3.eth.getBalance(secondUser)), secondUserWalletBalance, 0.003)
         )
       })
   })

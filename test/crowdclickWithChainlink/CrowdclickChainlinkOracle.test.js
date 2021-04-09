@@ -1,3 +1,4 @@
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const CrowdclickOracle = artifacts.require('CrowdclickOracle')
 const truffleAssert = require('truffle-assertions')
 const { time } = require('@openzeppelin/test-helpers')
@@ -7,7 +8,7 @@ const config = require('../../dao/environment')
 
 const {
   chainlink, 
-  startTracking, 
+  startTracking,
   trackingInterval 
 } = getCrowdclickChainlinkOracleEnv(config.networkEnvironment)
 
@@ -22,7 +23,8 @@ contract("CrowdclickOracle (with chainlink) contract's tests", accounts =>
   let updatedTrackingInterval, currentStartTracking
 
   before(async () => {
-    crowdclickOracle = await CrowdclickOracle.new(chainlink, startTracking, trackingInterval, { from: owner })
+    crowdclickOracle = await deployProxy(CrowdclickOracle, [chainlink, startTracking, trackingInterval], { owner })
+
   })
 
   it('should check the contract was initialized with the expected values', async() => {

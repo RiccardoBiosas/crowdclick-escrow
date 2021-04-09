@@ -1,3 +1,4 @@
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickOracle = artifacts.require('CrowdclickOracle')
 const { assert } = require('chai')
@@ -30,9 +31,9 @@ contract('CrowdclickEscrow contract with CrowdclickOracle (with chainlink) as a 
 
 
   before(async () => {
-      crowdclickOracle = await CrowdclickOracle.new(chainlink, startTracking, trackingInterval, { from: owner })
-      crowdclickOracleAddress = crowdclickOracle.address
-      crowdclickEscrow = await CrowdclickEscrow.new(crowdclickOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner })
+    crowdclickOracle = await deployProxy(CrowdclickOracle, [chainlink, startTracking,trackingInterval], { owner })
+    crowdclickOracleAddress = crowdclickOracle.address
+    crowdclickEscrow = await deployProxy(CrowdclickEscrow, [crowdclickOracleAddress,minimumUsdWithdrawal, campaignFee, feeCollector], { owner })
   })
 
   context("Check deployment's data", () => {
@@ -103,17 +104,13 @@ context("CrowdclickEscrow's lifecycle", () => {
     })
   
     it("should allow the user to withdraw their earned balance", async () => {
-      const campaign = toE18Campaign(currentCampaignsStatus[0])
       userWalletBalance = fromE18(await web3.eth.getBalance(user)) +userContractbalance
-      await crowdclickEscrow.withdrawUserBalance(
-        campaign.taskReward,
-        { from: user }
-      )
+      await crowdclickEscrow.withdrawUserBalance({ from: user })
       assert.isTrue(
         approximateEquality(fromE18(await web3.eth.getBalance(user)),userWalletBalance, 0.003)
       )
     })
-  
+
     it('should show the correct campaign stats given the url associated to the campaign', async () => {
       const { uuid, ...campaign } = currentCampaignsStatus[0]
       const fetchedCampaign = await crowdclickEscrow.lookupTask(

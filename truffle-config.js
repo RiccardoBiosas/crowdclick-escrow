@@ -23,6 +23,11 @@ module.exports = {
       port: 8545,
       network_id: 80001
     },
+    bscTestnetFork: {
+      host: "127.0.0.1",
+      port: 8545,
+      network_id: 97
+    },
     ropsten: {
       provider: () => new HDWalletProvider(process.env.MNEMONIC, process.env.INFURA_ROPSTEN),      
       network_id: 3
@@ -60,7 +65,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.5.0"
+      version: "0.8.0"
     }
   }
 

@@ -1,20 +1,28 @@
-pragma solidity ^0.5.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/ownership/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-
-contract CrowdclickMockOracle is Ownable {
+contract CrowdclickMockOracle is
+    Initializable,
+    OwnableUpgradeable
+{
     using SafeMath for uint256;
 
     uint256 private currentUnderlyingPrice;
-    uint256 private multiplier = 10 ** 18;
+    uint256 private multiplier;
 
     address public dataSource;
 
-    constructor(uint256 _currentUnderlyingPrice, address _dataSource) public {
+    function initialize(
+        uint256 _currentUnderlyingPrice, 
+        address _dataSource
+    ) public {
+        __Ownable_init_unchained();
         require(_currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
+        multiplier = 10 ** 18;
+
         currentUnderlyingPrice = _currentUnderlyingPrice.mul(multiplier);
         dataSource = _dataSource;
     }

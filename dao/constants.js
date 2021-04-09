@@ -18,7 +18,15 @@ const crowdclickEscrowData = {
             currentBudget: 0.060000,
             url: 'https://cardano.org/',
             isActive: true
-          }
+        },
+        {
+            uuid: uuidv4(),
+            taskBudget: 1.80000,
+            taskReward: 0.30000,
+            currentBudget: 1.80000,
+            url: 'https://ethereum.org/en/',
+            isActive: true
+        },
     ],
     minimumUsdWithdrawal: config.contractDeployment.crowdclickEscrow.minimumUsdWithdrawal,
     campaignFee: config.contractDeployment.crowdclickEscrow.feePercentage
