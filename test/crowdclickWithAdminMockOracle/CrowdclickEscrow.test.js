@@ -1,9 +1,10 @@
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+const truffleAssert = require('truffle-assertions')
 const { time } = require('@openzeppelin/test-helpers')
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 const { assert } = require('chai')
-const { fromE18, approximateEquality, updateCampaign, calculateFee, toE18Campaign } = require('../../dao/helpers')
+const { fromE18, approximateEquality, updateCampaign, calculateFee, toE18Campaign, toE18 } = require('../../dao/helpers')
 const { crowdclickEscrowData, crowdclickMockOracleData, CAMPAIGN_OPERATION } = require('../../dao/constants')
 const currencyApi = require('../../dao/api')
 
@@ -88,7 +89,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
     
       it("should forward the reward for the previously created task and increase the user's contract balance by an amount equal to the campaign's reward", async () => {
         const campaign =  currentCampaignsStatus[0]
-        await crowdclickEscrow.forwardRewards(
+        const tx = await crowdclickEscrow.forwardRewards(
           user,
           publisher,
           campaign.uuid,
@@ -96,6 +97,10 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
             from: owner
           }
         )
+        await truffleAssert.eventEmitted(tx, 'RewardForwarded', ev => {
+          console.log(`###RewardForwarded### recipient: ${ev.recipient}, reward: ${ev.reward.toString()}, campaignUrl: ${ev.campaignUrl}`)
+          return ev.recipient === user && +ev.reward.toString() === +toE18(campaign.taskReward.toString()) && ev.campaignUrl === campaign.url
+        })
         userContractbalance = campaign.taskReward
         currentCampaignsStatus[0] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD)
         assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(user)), userContractbalance, 'wrong user balance')
@@ -108,7 +113,11 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
     
       it("should allow the user to withdraw their earned balance", async () => {
         userWalletBalance = fromE18(await web3.eth.getBalance(user)) + userContractbalance
-        await crowdclickEscrow.withdrawUserBalance({ from: user })
+        const tx = await crowdclickEscrow.withdrawUserBalance({ from: user })
+        await truffleAssert.eventEmitted(tx, 'UserWithdrawalEmitted', ev => {
+          console.log(`###UserWithdrawalEmitted### recipient: ${ev.recipient}, amount: ${ev.amount.toString()}`)
+          return ev.recipient === user && +ev.amount.toString() === +toE18(userContractbalance.toString())
+        })
         assert.isTrue(
           approximateEquality(fromE18(await web3.eth.getBalance(user)), userWalletBalance, 0.003)
         )
@@ -198,7 +207,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
 
       it(`it should forward the reward for the newly created task and update the user's balance accordingly`, async() => {
         const campaign =  currentCampaignsStatus[1]
-        await crowdclickEscrow.forwardRewards(
+        const tx = await crowdclickEscrow.forwardRewards(
           secondUser,
           publisher,
           campaign.uuid,
@@ -206,6 +215,10 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
             from: owner
           }
         )
+        await truffleAssert.eventEmitted(tx, 'RewardForwarded', ev => {
+          console.log(`###RewardForwarded### recipient: ${ev.recipient}, reward: ${ev.reward.toString()}, campaignUrl: ${ev.campaignUrl.toString()}`)
+          return ev.recipient === secondUser && +ev.reward.toString() === +toE18(campaign.taskReward.toString()) && ev.campaignUrl === campaign.url
+        })
         secondUserContractBalance = campaign.taskReward
         publisherContractBalance -= campaign.taskReward
         currentCampaignsStatus[1] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD)
@@ -284,9 +297,13 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         publisherContractBalance -= campaign.taskReward
         currentCampaignsStatus[2] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD)
         assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance, 'wrong user balance')
-
+        
         secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance
-        await crowdclickEscrow.withdrawUserBalance({ from: secondUser })
+        const tx = await crowdclickEscrow.withdrawUserBalance({ from: secondUser })
+        await truffleAssert.eventEmitted(tx, 'UserWithdrawalEmitted', ev => {
+          console.log(`###UserWithdrawalEmitted### recipient: ${ev.recipient}, amount: ${ev.amount.toString()}`)
+          return ev.recipient === secondUser && +ev.amount.toString() === +toE18(secondUserContractBalance.toString())
+        })
         secondUserContractBalance = 0
         assert.isTrue(
           approximateEquality(fromE18(await web3.eth.getBalance(secondUser)), secondUserWalletBalance, 0.003)

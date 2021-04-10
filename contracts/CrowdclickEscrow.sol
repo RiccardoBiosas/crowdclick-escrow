@@ -19,6 +19,11 @@ contract CrowdclickEscrow is
 
     ICrowdclickOracle internal crowdclickOracle;
 
+    event RewardForwarded(address recipient, uint256 reward, string campaignUrl);
+    event CampaignCreated(address publisher, uint256 campaignBudget, string campaignUrl);
+    event UserWithdrawalEmitted(address recipient, uint256 amount);
+    event PublisherWithdrawalEmitted(address recipient, uint256 amount, string campaignUrl);
+
     struct Task {
         uint256 taskBudget;
         uint256 taskReward;
@@ -86,6 +91,7 @@ contract CrowdclickEscrow is
         publisherAccountBalance[msg.sender] = publisherAccountBalance[msg
             .sender]
             .add(taskInstance.currentBudget);
+        emit CampaignCreated(msg.sender, taskInstance.taskBudget, taskInstance.url);
     }
 
     function changeFeeCollector(address payable _newFeeCollector) external onlyOwner() {
@@ -128,6 +134,7 @@ contract CrowdclickEscrow is
             lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
             payable(msg.sender).transfer(userWeiBalance);
         }
+        emit UserWithdrawalEmitted(msg.sender, userWeiBalance);
     }
 
     function withdrawFromCampaign(string calldata _uuid)
@@ -152,6 +159,7 @@ contract CrowdclickEscrow is
         uint256 currentCampaignBudget = taskInstance.currentBudget;
         taskInstance.currentBudget = 0;
         payable(msg.sender).transfer(currentCampaignBudget);
+        emit PublisherWithdrawalEmitted(msg.sender, taskInstance.currentBudget, taskInstance.url);
     }
 
     /** look up task based on the campaign's url */
@@ -198,6 +206,7 @@ contract CrowdclickEscrow is
         userAccountBalance[_userAddress] = userAccountBalance[_userAddress].add(
             taskInstance.taskReward
         );
+        emit RewardForwarded(_userAddress, taskInstance.taskReward, taskInstance.url);
         // if the updated campaign's current budget is less than the campaign's reward, then the campaign is not active anymore /
         if (
             publisherAccountBalance[_publisherAddress] <=
@@ -244,6 +253,7 @@ contract CrowdclickEscrow is
         uint256 currentCampaignBudget = taskInstance.currentBudget;
         taskInstance.currentBudget = 0;
         _publisherAddress.transfer(currentCampaignBudget);
+        emit PublisherWithdrawalEmitted(_publisherAddress, taskInstance.currentBudget, taskInstance.url);
     }
 
     // Admin withdraws user's balance on user's behalf /
@@ -260,6 +270,7 @@ contract CrowdclickEscrow is
         );
         userAccountBalance[_userAddress] = 0;
         _userAddress.transfer(userBalance);
+        emit UserWithdrawalEmitted(_userAddress, userBalance);
     }
 
     // PRIVATE FUNCTIONS /
