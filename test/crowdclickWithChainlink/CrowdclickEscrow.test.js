@@ -1,4 +1,4 @@
-const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickOracle = artifacts.require('CrowdclickOracle')
 const { assert } = require('chai')

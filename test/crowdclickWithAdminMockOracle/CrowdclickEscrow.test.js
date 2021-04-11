@@ -5,7 +5,7 @@ const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 const { assert } = require('chai')
 const { fromE18, approximateEquality, updateCampaign, calculateFee, toE18Campaign, toE18 } = require('../../dao/helpers')
-const { crowdclickEscrowData, crowdclickMockOracleData, CAMPAIGN_OPERATION } = require('../../dao/constants')
+const { crowdclickEscrowData, CAMPAIGN_OPERATION } = require('../../dao/constants')
 const currencyApi = require('../../dao/api')
 
 const { 
