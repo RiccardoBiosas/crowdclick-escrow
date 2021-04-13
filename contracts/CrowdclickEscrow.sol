@@ -142,7 +142,7 @@ contract CrowdclickEscrow is
         payable
         nonReentrant
     {
-        Task memory taskInstance = _selectTask(msg.sender, _uuid);
+        Task storage taskInstance = _selectTask(msg.sender, _uuid);
         require(
             taskInstance.currentBudget > 0,
             NOT_ENOUGH_CAMPAIGN_BALANCE
@@ -237,7 +237,7 @@ contract CrowdclickEscrow is
         payable
         nonReentrant
     {
-        Task memory taskInstance = _selectTask(_publisherAddress, _uuid);
+        Task storage taskInstance = _selectTask(_publisherAddress, _uuid);
         require(
             taskInstance.currentBudget > 0,
             NOT_ENOUGH_CAMPAIGN_BALANCE

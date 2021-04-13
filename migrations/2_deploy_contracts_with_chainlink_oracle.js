@@ -18,7 +18,7 @@ module.exports = function(deployer, network, accounts) {
     deployer.then(async() => {
       const owner = accounts[0]
       const crowdclickOracle = await deployCrowdclickOracle(owner)
-      crowdclickEscrow = await deployProxy(CrowdclickEscrow, [crowdclickOracleAddress,minimumUsdWithdrawal, feePercentage, owner], { owner })
+      crowdclickEscrow = await deployProxy(CrowdclickEscrow, [crowdclickOracle.address,minimumUsdWithdrawal, feePercentage, owner], { owner })
       console.log(`CrowdclickOracle address: ${crowdclickOracle.address}`)
       console.log(`CrowdclickEscrow address: ${crowdclickEscrow.address}`)
     }).catch(e => {
