@@ -5,8 +5,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
-
 import "@chainlink/contracts/src/v0.5/interfaces/AggregatorV3Interface.sol";
 
 import "./constants/CrowdclickOracleErrors.sol";

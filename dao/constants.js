@@ -1,8 +1,10 @@
+const { v4: uuidv4 } = require('uuid');
 const config = require("./environment")
 
 const crowdclickEscrowData = {
     mockCampaigns: [
         {
+          uuid: uuidv4(),
           taskBudget: 0.080000,
           taskReward: 0.030000,
           currentBudget: 0.080000,
@@ -10,6 +12,7 @@ const crowdclickEscrowData = {
           isActive: true
         },
         {
+            uuid: uuidv4(),
             taskBudget: 0.060000,
             taskReward: 0.010000,
             currentBudget: 0.060000,
@@ -17,6 +20,7 @@ const crowdclickEscrowData = {
             isActive: true
         },
         {
+            uuid: uuidv4(),
             taskBudget: 1.80000,
             taskReward: 0.30000,
             currentBudget: 1.80000,

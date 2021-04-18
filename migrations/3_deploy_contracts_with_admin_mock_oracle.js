@@ -1,4 +1,5 @@
 
+const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow')
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle')
 
@@ -6,18 +7,19 @@ const currencyApi  = require("../dao/api")
 const config = require("../dao/environment")
 const { minimumUsdWithdrawal, feePercentage } = config.contractDeployment.crowdclickEscrow
 
-const deployCrowdclickMockOracle = async (deployer, accounts) => {
+const deployCrowdclickMockOracle = async (owner) => {
   const currentEthPrice = await currencyApi.fetchEthToUSD()
   console.log(`current ethereum price: ${currentEthPrice}`)
-  const crowdclickMockOracle = await deployer.deploy(CrowdclickMockOracle, currentEthPrice, accounts[0])
+  crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentEthPrice, owner], { owner })
   return crowdclickMockOracle
 }
 
 module.exports = function(deployer, network, accounts) {
   deployer.then(async() => {
-    if(config.networkEnvironment === config.NETWORK_ENVIRONMENT.RINKEBY && config.isProduction) {
-      const crowdclickMockOracle = await deployCrowdclickMockOracle(deployer, accounts)
-      const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickMockOracle.address, minimumUsdWithdrawal, feePercentage, accounts[0])
+    if(config.networkEnvironment === config.NETWORK_ENVIRONMENT.GOERLI && config.isProduction) {
+      const owner = accounts[0]
+      const crowdclickMockOracle = await deployCrowdclickMockOracle(owner)
+      crowdclickEscrow = await deployProxy(CrowdclickEscrow,[crowdclickMockOracle.address, minimumUsdWithdrawal, feePercentage, owner], { owner })
       console.log(`CrowdclickMockOracle address: ${crowdclickMockOracle.address}`)
       console.log(`crowdclickEscrow address: ${crowdclickEscrow.address}`)
     }
