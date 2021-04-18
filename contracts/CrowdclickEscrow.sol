@@ -102,6 +102,10 @@ contract CrowdclickEscrow is
         feePercentage = _newFeePercentage;
     }
 
+    function changeMaximumWeiUserWithdrawal(uint256 _updatedMaximumWeiUserWithdrawal) external onlyOwner() {
+        maximumWeiUserWithdrawal = _updatedMaximumWeiUserWithdrawal;
+    }
+
     function balanceOfPublisher(address _address)
         external
         view

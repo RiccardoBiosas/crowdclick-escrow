@@ -405,5 +405,20 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
           approximateEquality(fromE18(await web3.eth.getBalance(secondUser)), secondUserWalletBalance, 0.003)
         )
       })
+
+      it(`should fail: only owner can change maximumWeiUserWithdrawal`, async() => {
+        try {
+          await crowdclickEscrow.changeMaximumWeiUserWithdrawal('300000000000000000', { from: user })
+        } catch(error) {
+          assert.equal(error.reason, 'Ownable: caller is not the owner')
+        }
+      })
+
+      it(`owner can change maximumWeiUserWithdrawal`, async() => {
+        const updatedMaximumWeiUserWithdrawal = '300000000000000000'
+        await crowdclickEscrow.changeMaximumWeiUserWithdrawal(updatedMaximumWeiUserWithdrawal, { from: owner })   
+        const currentMaximumWeiUserWithdrawal = await crowdclickEscrow.maximumWeiUserWithdrawal.call()
+        assert.equal(updatedMaximumWeiUserWithdrawal, currentMaximumWeiUserWithdrawal.toString(), 'wrong maximumWeiUserWithdrawal')
+      })
   })
 })
