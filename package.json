@@ -12,10 +12,10 @@
     "test:rinkebyFork": "truffle test --network rinkebyFork",
     "test:goerliFork": "truffle test --network goerliFork",
     "test:bscTestnet": "truffle test --network bscTestnet",
-    "migrate:goerli": "truffle migrate --network goerli",
-    "migrate:mumbai": "truffle migrate --network mumbai",
-    "migrate:bscTestnet": "truffle migrate --network bscTestnet",
-    "migrate:bscMainnet": "truffle migrate --network bscMainnet"
+    "migrate:goerli": "truffle migrate --network goerli --reset",
+    "migrate:mumbai": "truffle migrate --network mumbai --reset",
+    "migrate:bscTestnet": "truffle migrate --network bscTestnet --reset",
+    "migrate:bscMainnet": "truffle migrate --network bscMainnet --reset"
   },
   "repository": {
     "type": "git",
@@ -36,7 +36,8 @@
     "dotenv": "^8.2.0",
     "eth-json-rpc-filters": "^4.1.1",
     "truffle-assertions": "^0.9.2",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "web3": "^1.3.5"
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.10",

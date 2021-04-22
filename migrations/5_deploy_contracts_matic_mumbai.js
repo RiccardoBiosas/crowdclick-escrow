@@ -10,7 +10,7 @@ const { toE18 } = require('../dao/helpers');
 const { minimumUsdWithdrawal, feePercentage } = config.contractDeployment.crowdclickEscrow;
 
 const deployCrowdclickMockOracle = async (owner) => {
-  const currentUnderlying = await currencyApi.fetchEthToUSD();
+  const currentUnderlying = await currencyApi.fetchMaticToUSD();
   const currentUnderlyingToWei = toE18(currentUnderlying.toString());
   console.log(`current matic/polygon price: ${currentUnderlying}`);
   const crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentUnderlyingToWei, owner], { owner });
