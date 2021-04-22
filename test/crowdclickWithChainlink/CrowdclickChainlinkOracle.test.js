@@ -1,67 +1,66 @@
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
-const CrowdclickOracle = artifacts.require('CrowdclickOracle')
-const truffleAssert = require('truffle-assertions')
-const { time } = require('@openzeppelin/test-helpers')
-const { assert } = require('chai')
-const { getCrowdclickChainlinkOracleEnv } = require('../../dao/helpers')
-const config = require('../../dao/environment')
+
+const CrowdclickOracle = artifacts.require('CrowdclickOracle');
+const truffleAssert = require('truffle-assertions');
+const { time } = require('@openzeppelin/test-helpers');
+const { assert } = require('chai');
+const { getCrowdclickChainlinkOracleEnv } = require('../../dao/helpers');
+const config = require('../../dao/environment');
 
 const {
-  chainlink, 
+  chainlink,
   startTracking,
-  trackingInterval 
-} = getCrowdclickChainlinkOracleEnv(config.networkEnvironment)
+  trackingInterval,
+} = getCrowdclickChainlinkOracleEnv(config.networkEnvironment);
 
-
-contract("CrowdclickOracle (with chainlink) contract's tests", accounts =>
-{
-  const [ owner, user ] = accounts
+contract("CrowdclickOracle (with chainlink) contract's tests", (accounts) => {
+  const [owner, user] = accounts;
 
   /** contracts */
-  let crowdclickOracle
+  let crowdclickOracle;
   /** contracts' values */
-  let updatedTrackingInterval, currentStartTracking
+  let updatedTrackingInterval; let
+    currentStartTracking;
 
   before(async () => {
-    crowdclickOracle = await deployProxy(CrowdclickOracle, [chainlink, startTracking, trackingInterval], { owner })
+    crowdclickOracle = await deployProxy(CrowdclickOracle, [chainlink, startTracking, trackingInterval], { owner });
+  });
 
-  })
+  it('should check the contract was initialized with the expected values', async () => {
+    assert.equal((await crowdclickOracle.startTracking.call()).toString(), startTracking);
+    assert.equal((await crowdclickOracle.trackingInterval.call()).toString(), trackingInterval);
+    assert.isNotNull((await crowdclickOracle.getUnderlyingUsdPriceFeed.call()).toString());
+  });
 
-  it('should check the contract was initialized with the expected values', async() => {
-    assert.equal((await crowdclickOracle.startTracking.call()).toString(), startTracking)
-    assert.equal((await crowdclickOracle.trackingInterval.call()).toString(), trackingInterval)
-    assert.isNotNull((await crowdclickOracle.getUnderlyingUsdPriceFeed.call()).toString())
-  })
+  it('should return the cached result if trackingInterval is not expired', async () => {
+    const tx = await crowdclickOracle.getUnderlyingUsdPriceFeed();
+    await truffleAssert.eventEmitted(tx, 'PricefeedUpdate', (ev) => {
+      console.log(`was cached: ${ev.wasCached}, value: ${ev.value.toString()}`);
+      return ev.wasCached === true;
+    });
+  });
 
-  it('should return the cached result if trackingInterval is not expired', async() => {
-    const tx = await crowdclickOracle.getUnderlyingUsdPriceFeed()
-    await truffleAssert.eventEmitted(tx, 'PricefeedUpdate', ev => {
-        console.log(`was cached: ${ev.wasCached}, value: ${ev.value.toString()}`)
-        return ev.wasCached === true
-    })
-  })
+  it("should update the pricefeed via chainlink oracle's request after the trackingInterval expires", async () => {
+    await time.increase(trackingInterval + 1);
+    currentStartTracking = +(await time.latest()).toString();
+    const tx = await crowdclickOracle.getUnderlyingUsdPriceFeed();
+    await truffleAssert.eventEmitted(tx, 'PricefeedUpdate', (ev) => {
+      console.log(`was cached: ${ev.wasCached}, value: ${ev.value.toString()}`);
+      return ev.wasCached === false;
+    });
+  });
 
-  it("should update the pricefeed via chainlink oracle's request after the trackingInterval expires", async() => {
-    await time.increase(trackingInterval + 1)
-    currentStartTracking = +(await time.latest()).toString()
-    const tx = await crowdclickOracle.getUnderlyingUsdPriceFeed()
-    await truffleAssert.eventEmitted(tx, 'PricefeedUpdate', ev => {
-        console.log(`was cached: ${ev.wasCached}, value: ${ev.value.toString()}`)
-        return ev.wasCached === false
-    })
-})
-
-  it('should not allow non-owner to update tracking interval', async() => {
+  it('should not allow non-owner to update tracking interval', async () => {
     try {
-        updatedTrackingInterval = 60 * 60 * 48
-        await crowdclickOracle.changeTrackingInterval(updatedTrackingInterval, { from: user })
-    } catch(e) {
-        assert.equal(e.reason, 'Ownable: caller is not the owner')
+      updatedTrackingInterval = 60 * 60 * 48;
+      await crowdclickOracle.changeTrackingInterval(updatedTrackingInterval, { from: user });
+    } catch (e) {
+      assert.equal(e.reason, 'Ownable: caller is not the owner');
     }
-  })
+  });
 
-  it('should allow owner to update the tracking interval', async() => {
-    await crowdclickOracle.changeTrackingInterval(updatedTrackingInterval, { from: owner })
-    assert((await crowdclickOracle.trackingInterval).toString(), updatedTrackingInterval.toString())
-  })
-})
+  it('should allow owner to update the tracking interval', async () => {
+    await crowdclickOracle.changeTrackingInterval(updatedTrackingInterval, { from: owner });
+    assert((await crowdclickOracle.trackingInterval).toString(), updatedTrackingInterval.toString());
+  });
+});
