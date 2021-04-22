@@ -7,13 +7,13 @@
     "test": "test"
   },
   "scripts": {
-    "compile": "truffle compile",
+    "compile": "truffle compile --all",
     "test:develop": "truffle test --network develop",
     "test:rinkebyFork": "truffle test --network rinkebyFork",
     "test:goerliFork": "truffle test --network goerliFork",
     "test:bscTestnet": "truffle test --network bscTestnet",
     "migrate:goerli": "truffle migrate --network goerli",
-    "migrate:mumbai": "truffle migrate --network maticMumbai",
+    "migrate:mumbai": "truffle migrate --network mumbai",
     "migrate:bscTestnet": "truffle migrate --network bscTestnet",
     "migrate:bscMainnet": "truffle migrate --network bscMainnet"
   },
@@ -30,6 +30,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.0.0",
     "@openzeppelin/truffle-upgrades": "^1.5.0",
     "@truffle/hdwallet-provider": "^1.0.34",
+    "async": "^3.2.0",
     "axios": "^0.21.1",
     "chai": "^4.2.0",
     "dotenv": "^8.2.0",
@@ -39,6 +40,10 @@
   },
   "devDependencies": {
     "@openzeppelin/test-helpers": "^0.5.10",
+    "eslint": "^7.24.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
     "redux-devtools-extension": "^2.13.8"
   }
 }

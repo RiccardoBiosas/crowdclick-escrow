@@ -11,7 +11,6 @@ contract CrowdclickMockOracle is
     using SafeMath for uint256;
 
     uint256 private currentUnderlyingPrice;
-    uint256 private multiplier;
 
     address public dataSource;
 
@@ -21,9 +20,8 @@ contract CrowdclickMockOracle is
     ) public {
         __Ownable_init_unchained();
         require(_currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
-        multiplier = 10 ** 18;
 
-        currentUnderlyingPrice = _currentUnderlyingPrice.mul(multiplier);
+        currentUnderlyingPrice = _currentUnderlyingPrice;
         dataSource = _dataSource;
     }
 
@@ -34,7 +32,7 @@ contract CrowdclickMockOracle is
     function adminPushUnderlyingUSDPrice(uint256 _currentUnderlyingPrice) external {
         require(msg.sender == dataSource, 'NOT_DATASOURCE');
         require(_currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
-        currentUnderlyingPrice = _currentUnderlyingPrice.mul(multiplier);
+        currentUnderlyingPrice = _currentUnderlyingPrice;
     }
 
     function getUnderlyingUsdPriceFeed() view external returns(uint256) {

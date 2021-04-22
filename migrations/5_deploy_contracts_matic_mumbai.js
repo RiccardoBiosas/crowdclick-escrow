@@ -12,14 +12,14 @@ const { minimumUsdWithdrawal, feePercentage } = config.contractDeployment.crowdc
 const deployCrowdclickMockOracle = async (owner) => {
   const currentUnderlying = await currencyApi.fetchEthToUSD();
   const currentUnderlyingToWei = toE18(currentUnderlying.toString());
-  console.log(`current bnb price: ${currentUnderlying}`);
+  console.log(`current matic/polygon price: ${currentUnderlying}`);
   const crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentUnderlyingToWei, owner], { owner });
   return crowdclickMockOracle;
 };
 
 module.exports = function (deployer, network, accounts) {
   deployer.then(async () => {
-    if (config.networkEnvironment === config.NETWORK_ENVIRONMENT.BSC_TESTNET && config.isProduction) {
+    if (config.networkEnvironment === config.NETWORK_ENVIRONMENT.MUMBAI && config.isProduction) {
       const owner = accounts[0];
       const crowdclickMockOracle = await deployCrowdclickMockOracle(owner);
       const crowdclickEscrow = await deployProxy(CrowdclickEscrow, [crowdclickMockOracle.address, minimumUsdWithdrawal, feePercentage, owner], { owner });
