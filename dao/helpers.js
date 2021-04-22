@@ -1,3 +1,4 @@
+const web3 = require('web3')
 const { CAMPAIGN_OPERATION } = require('./constants')
 const config = require('./environment')
 
