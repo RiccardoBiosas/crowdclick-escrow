@@ -118,6 +118,10 @@ contract CrowdclickEscrow is
         return userAccountBalance[_address];
     }
 
+    function isUserWithdrawalEnabled() external view returns (bool) {
+        return block.timestamp >= lastUserWithdrawalTime[msg.sender] + 1 days;
+    }
+
     function withdrawUserBalance() 
         external
         payable 
