@@ -69,7 +69,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
   });
 
   context("CrowdclickEscrow's lifecycle", () => {
-    it("should show the publisher's contract balance as equal to the budget of the first publisher's task being created", async () => {
+    it(`should show the publisher's contract balance as equal to the budget of the first publisher's task being created and should show the correct campaign stats`, async () => {
       const campaign = currentCampaignsStatus[0];
       const e18Campaign = toE18Campaign(campaign);
       await crowdclickEscrow.openTask(
@@ -85,7 +85,22 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       const updatedCampaign = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.CAMPAIGN_CREATION);
       currentCampaignsStatus[0] = updatedCampaign;
       publisherContractBalance = updatedCampaign.currentBudget;
+      
+      const createdCampaign = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        publisher
+      );
+      const parsedCeatedCampaign = {
+        taskBudget: +fromE18(createdCampaign.taskBudget).toFixed(6),
+        taskReward: +fromE18(createdCampaign.taskReward).toFixed(6),
+        currentBudget: +fromE18(createdCampaign.currentBudget).toFixed(6),
+        url: createdCampaign.url,
+        isActive: createdCampaign.isActive,
+      };
 
+      const { uuid, ...updatedCampaigncampaignComparison } = currentCampaignsStatus[0];
+      console.log('updatedCampaigncampaignComparison: ', updatedCampaigncampaignComparison)
+      assert.deepEqual(parsedCeatedCampaign, updatedCampaigncampaignComparison);
       assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisherbalance');
     });
 
@@ -140,9 +155,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       const { uuid, ...campaign } = currentCampaignsStatus[0];
       const fetchedCampaign = await crowdclickEscrow.lookupTask(
         uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
       const fetchedCampaignToEthereum = {
         taskBudget: +fromE18(fetchedCampaign.taskBudget).toFixed(6),
@@ -159,9 +172,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
 
       const campaignBeforeWithdrawal = await crowdclickEscrow.lookupTask(
         campaign.uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
       assert.isTrue(campaignBeforeWithdrawal.isActive);
       assert.notEqual(campaignBeforeWithdrawal.currentBudget, 0, 'wrong campaign.currentBudget before publisher\'s withdrawal');
@@ -173,9 +184,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       });
       const campaignAfterWithdrawal = await crowdclickEscrow.lookupTask(
         campaign.uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
       assert.isFalse(campaignAfterWithdrawal.isActive, 'wrong campaign.isActive value after publisher\'s withdrawal');
       assert.equal(campaignAfterWithdrawal.currentBudget, 0, 'wrong campaign.currentBudget after publisher\'s withdrawal');
@@ -232,6 +241,21 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       currentCampaignsStatus[1] = updatedCampaign;
       publisherContractBalance = updatedCampaign.currentBudget;
 
+      const createdCampaign = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        publisher
+      );
+      const parsedCeatedCampaign = {
+        taskBudget: +fromE18(createdCampaign.taskBudget).toFixed(6),
+        taskReward: +fromE18(createdCampaign.taskReward).toFixed(6),
+        currentBudget: +fromE18(createdCampaign.currentBudget).toFixed(6),
+        url: createdCampaign.url,
+        isActive: createdCampaign.isActive,
+      };
+
+      const { uuid, ...updatedCampaigncampaignComparison } = currentCampaignsStatus[1];
+
+      assert.deepEqual(parsedCeatedCampaign, updatedCampaigncampaignComparison);
       assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisher balance');
     });
 
@@ -240,9 +264,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
 
       const campaignBeforeForward = await crowdclickEscrow.lookupTask(
         campaign.uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
 
       const tx = await crowdclickEscrow.forwardRewards(
@@ -259,9 +281,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       });
       const campaignAfterForward = await crowdclickEscrow.lookupTask(
         campaign.uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
 
       assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
@@ -279,9 +299,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
 
       const campaignBeforeWithdrawal = await crowdclickEscrow.lookupTask(
         campaign.uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
 
       assert.isTrue(campaignBeforeWithdrawal.isActive);
@@ -296,9 +314,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       );
       const campaignAfterWithdrawal = await crowdclickEscrow.lookupTask(
         campaign.uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
 
       assert.isFalse(campaignAfterWithdrawal.isActive, 'wrong campaign.isActive value after adminPublisherWithdrawal');

@@ -119,9 +119,7 @@ contract('CrowdclickEscrow contract with CrowdclickOracle (with chainlink) as a 
       const { uuid, ...campaign } = currentCampaignsStatus[0];
       const fetchedCampaign = await crowdclickEscrow.lookupTask(
         uuid,
-        {
-          from: publisher,
-        },
+        publisher
       );
       const fetchedCampaignToEthereum = {
         taskBudget: +fromE18(fetchedCampaign.taskBudget).toFixed(6),

@@ -171,12 +171,12 @@ contract CrowdclickEscrow is
     }
 
     /** look up task based on the campaign's url */
-    function lookupTask(string calldata _uuid)
+    function lookupTask(string calldata _uuid, address _address)
         external
         view
         returns (Task memory task)
     {
-        Task memory taskInstance = _selectTask(msg.sender, _uuid);
+        Task memory taskInstance = _selectTask(_address, _uuid);
         return taskInstance;
     }
 
