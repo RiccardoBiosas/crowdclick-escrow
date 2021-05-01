@@ -62,9 +62,9 @@ contract CrowdclickEscrow is
         feePercentage = _feePercentage;
         feeCollector = _feeCollector;
 
-        maximumWeiUserWithdrawal = 500000000000000000;
-        divider = 10 ** 18;
-        multiplier = 10 * 100000;
+        maximumWeiUserWithdrawal =  5e17;
+        divider = 1e18;
+        multiplier = 1e6;
     }
 
     // EXTERNAL FUNCTIONS /
@@ -137,12 +137,13 @@ contract CrowdclickEscrow is
             userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(maximumWeiUserWithdrawal);
             lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
             payable(msg.sender).transfer(maximumWeiUserWithdrawal);
+            emit UserWithdrawalEmitted(msg.sender, maximumWeiUserWithdrawal);
         } else {
             userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(userWeiBalance);
             lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
             payable(msg.sender).transfer(userWeiBalance);
+            emit UserWithdrawalEmitted(msg.sender, userWeiBalance);
         }
-        emit UserWithdrawalEmitted(msg.sender, userWeiBalance);
     }
 
     function withdrawFromCampaign(string calldata _uuid)
@@ -301,11 +302,11 @@ contract CrowdclickEscrow is
         // adjusts the 8decimals-long eth/usd pricefeed and adjusts by multiplier /
         uint256 adjustedCurrentUnderlyingPrice = (currentUnderlyingPrice.div(100000000)).mul(multiplier);
         // adjusts the 18decimals-long wei value and adjusts by multiplier /
-        uint256 adjustedEthAmount = adjustByDivider(adjustByMultiplier(_weiAmount));
+        uint256 adjustedUnderlyingAmount = adjustByDivider(adjustByMultiplier(_weiAmount));
         // one-millionth /
-        uint256 sliceOfWholeEth = adjustedCurrentUnderlyingPrice.div(adjustedEthAmount);
+        uint256 sliceOfWholeUnderlying = adjustedCurrentUnderlyingPrice.div(adjustedUnderlyingAmount);
         // adjusted wei/usd pricefeed /
-        return adjustedCurrentUnderlyingPrice.div(sliceOfWholeEth);
+        return adjustedCurrentUnderlyingPrice.div(sliceOfWholeUnderlying);
     }
 
     function calculateFee(uint256 _amount) view private returns(uint256) {

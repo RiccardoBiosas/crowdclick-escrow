@@ -27,6 +27,22 @@ const crowdclickEscrowData = {
             url: 'https://ethereum.org/en/',
             isActive: true
         },
+        {
+            uuid: uuidv4(),
+            taskBudget: 8.80000,
+            taskReward: 0.30000,
+            currentBudget: 8.80000,
+            url: 'https://ethereum.org/en/',
+            isActive: true
+        },
+        {
+            uuid: uuidv4(),
+            taskBudget: 10.80000,
+            taskReward: 1.30000,
+            currentBudget: 10.80000,
+            url: 'https://stackoverflow.com/',
+            isActive: true
+        },
     ],
     minimumUsdWithdrawal: config.contractDeployment.crowdclickEscrow.minimumUsdWithdrawal,
     campaignFee: config.contractDeployment.crowdclickEscrow.feePercentage

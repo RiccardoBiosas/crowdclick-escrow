@@ -18,7 +18,7 @@ const {
 } = crowdclickEscrowData;
 
 contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source for ethereum pricefeed', (accounts) => {
-  const [owner, publisher, user, feeCollector, secondUser] = accounts;
+  const [owner, publisher, user, feeCollector, secondUser, secondPublisher] = accounts;
 
   /** contracts */
   let crowdclickEscrow; let
@@ -31,6 +31,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
   let userWalletBalance;
   let feeCollectorWalletBalance;
   let publisherContractBalance;
+  let secondPublisherContractBalance;
   let userContractbalance;
   let secondUserContractBalance;
   let secondUserWalletBalance;
@@ -284,7 +285,6 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
         publisher
       );
 
-      console.log('campaignAfterForward ', campaignAfterForward)
       assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
       assert.isTrue(+campaignAfterForward.currentBudget > +campaignAfterForward.taskReward)
       assert.isTrue(campaignAfterForward.isActive)
@@ -478,10 +478,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
         campaign.uuid,
         publisher
       );
-      console.log('campaignBeforeForward ', campaignBeforeForward)
       const secondUserBalanceBefore = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
-      console.log('secondUserBalanceBefore: ', secondUserBalanceBefore)
-      console.log('secondUserBalanceBefore: typeof  ', typeof secondUserBalanceBefore)
 
       await crowdclickEscrow.forwardRewards(
         secondUser,
@@ -496,7 +493,10 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
         publisher
       );
 
-      const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
+      secondUserContractBalance += campaign.taskReward;
+      publisherContractBalance -= campaign.taskReward;
+
+      const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))      
 
       assert.equal(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward))
       assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
@@ -526,6 +526,9 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
         publisher
       );
 
+      secondUserContractBalance += campaign.taskReward;
+      publisherContractBalance -= campaign.taskReward;
+
       const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser));
 
       assert.equal(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward));
@@ -542,9 +545,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       campaign.uuid,
       publisher
     );
-    console.log('campaignBeforeForward ', campaignBeforeForward)
     const secondUserBalanceBefore = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
-    console.log('secondUserBalanceBefore: ', secondUserBalanceBefore)
 
     await crowdclickEscrow.forwardRewards(
       secondUser,
@@ -558,10 +559,11 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       campaign.uuid,
       publisher
     );
-    console.log('lastcampaignAfterForward ', campaignAfterForward)
+    
+    secondUserContractBalance += campaign.taskReward;
+    publisherContractBalance -= campaign.taskReward;
 
     const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser));
-    console.log('secondUserBalanceAfter: ', secondUserBalanceAfter)
 
     assert.isTrue(approximateEquality(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward)));
     assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
@@ -584,5 +586,104 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
           assert.equal(e.reason, 'CAMPAIGN_NOT_ACTIVE')
         }
       });
+
+
+    it(`secondPublisher creates the fifth contract campaign`, async () => {
+      const campaign = currentCampaignsStatus[4];
+      const e18Campaign = toE18Campaign(campaign);
+      await crowdclickEscrow.openTask(
+        campaign.uuid,
+        e18Campaign.taskBudget,
+        e18Campaign.taskReward,
+        e18Campaign.url,
+        {
+          from: secondPublisher,
+          value: e18Campaign.taskBudget,
+        },
+      );
+
+      const updatedCampaign = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.CAMPAIGN_CREATION);
+      currentCampaignsStatus[4] = updatedCampaign;
+      secondPublisherContractBalance = updatedCampaign.currentBudget;
+
+      const createdCampaign = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        secondPublisher
+      );
+      const parsedCeatedCampaign = {
+        taskBudget: +fromE18(createdCampaign.taskBudget).toFixed(6),
+        taskReward: +fromE18(createdCampaign.taskReward).toFixed(6),
+        currentBudget: +fromE18(createdCampaign.currentBudget).toFixed(6),
+        url: createdCampaign.url,
+        isActive: createdCampaign.isActive,
+      };
+
+      const { uuid, ...updatedCampaigncampaignComparison } = currentCampaignsStatus[4];
+      assert.deepEqual(parsedCeatedCampaign, updatedCampaigncampaignComparison);
+      assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(secondPublisher)), secondPublisherContractBalance, 0.001), 'wrong publisher balance');
+    });
+
+    it(`secondPublisher's campaign forwards reward correctly`, async () => {
+      const campaign = currentCampaignsStatus[4];
+
+      const campaignBeforeForward = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        secondPublisher
+      );
+      const secondUserBalanceBefore = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
+
+      await crowdclickEscrow.forwardRewards(
+        secondUser,
+        secondPublisher,
+        campaign.uuid,
+        {
+          from: owner,
+        },
+      );
+      const campaignAfterForward = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        secondPublisher
+      );
+
+      secondUserContractBalance += campaign.taskReward;
+      publisherContractBalance -= campaign.taskReward;
+
+      const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser));
+
+      assert.equal(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward));
+      assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget -  +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
+      assert.isTrue(+campaignAfterForward.currentBudget > +campaignAfterForward.taskReward);
+      assert.isTrue(campaignAfterForward.isActive);
+    });
+
+    it(`should allow the secondUser to withdraw their earned balance up to the maximumWeiUserWithdrawal which has been previously changed from 0.5underlying to 0.3`, async () => {
+      const aBitMoreThanAday = (60 * 60 * 26);
+      const target = +(await time.latest()).toString() + aBitMoreThanAday;
+      await time.increase(target);
+
+      secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + 0.3;
+      assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance);
+      
+      const tx = await crowdclickEscrow.withdrawUserBalance({ from: secondUser });
+      await truffleAssert.eventEmitted(tx, 'UserWithdrawalEmitted', (ev) => {
+        return ev.recipient === secondUser && +ev.amount.toString() === +toE18('0.3');
+      });
+      assert.isTrue(
+        approximateEquality(
+          fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), 
+          secondUserContractBalance - 0.3, 
+          0.001), 
+        `wrong secondUser's contract balance`
+      );
+
+      assert.isTrue(
+        approximateEquality(
+          fromE18(await web3.eth.getBalance(secondUser)), 
+          secondUserWalletBalance, 
+          0.003 // gas fees
+        ),
+        `wrong secondUser's wallet balance`
+      );
+    });
   });
 });
