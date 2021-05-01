@@ -99,7 +99,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       };
 
       const { uuid, ...updatedCampaigncampaignComparison } = currentCampaignsStatus[0];
-      console.log('updatedCampaigncampaignComparison: ', updatedCampaigncampaignComparison)
+
       assert.deepEqual(parsedCeatedCampaign, updatedCampaigncampaignComparison);
       assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisherbalance');
     });
@@ -284,7 +284,10 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
         publisher
       );
 
+      console.log('campaignAfterForward ', campaignAfterForward)
       assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
+      assert.isTrue(+campaignAfterForward.currentBudget > +campaignAfterForward.taskReward)
+      assert.isTrue(campaignAfterForward.isActive)
       secondUserContractBalance = campaign.taskReward;
       publisherContractBalance -= campaign.taskReward;
       currentCampaignsStatus[1] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD);
@@ -367,7 +370,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisher balance');
     });
 
-    it('it should forward the third campaign\'s reward to secondUser, update secondUser\'s contract balance accordingly and allow secondUser to withdraw to their wallet', async () => {
+    it(`it should forward the third campaign's reward to secondUser, update secondUser's contract balance accordingly and allow secondUser to withdraw to their wallet`, async () => {
       const campaign = currentCampaignsStatus[2];
       await crowdclickEscrow.forwardRewards(
         secondUser,
@@ -406,10 +409,11 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
             from: owner,
           },
         );
+
         secondUserContractBalance += campaign.taskReward;
         publisherContractBalance -= campaign.taskReward;
         currentCampaignsStatus[2] = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.FORWARD_REWARD);
-        assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance, 'wrong user balance');
+
         secondUserWalletBalance = fromE18(await web3.eth.getBalance(secondUser)) + secondUserContractBalance;
         await crowdclickEscrow.withdrawUserBalance({ from: secondUser });
       } catch (error) {
@@ -445,5 +449,140 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source f
       const currentMaximumWeiUserWithdrawal = await crowdclickEscrow.maximumWeiUserWithdrawal.call();
       assert.equal(updatedMaximumWeiUserWithdrawal, currentMaximumWeiUserWithdrawal.toString(), 'wrong maximumWeiUserWithdrawal');
     });
+
+    it(`publisher creates the fourth contract campaign with the same url as the first contract campaign`, async () => {
+      const campaign = currentCampaignsStatus[3];
+      const e18Campaign = toE18Campaign(campaign);
+      await crowdclickEscrow.openTask(
+        campaign.uuid,
+        e18Campaign.taskBudget,
+        e18Campaign.taskReward,
+        e18Campaign.url,
+        {
+          from: publisher,
+          value: e18Campaign.taskBudget,
+        },
+      );
+
+      const updatedCampaign = updateCampaign(campaign, calculateFee(campaign.taskBudget, campaignFee), CAMPAIGN_OPERATION.CAMPAIGN_CREATION);
+      currentCampaignsStatus[3] = updatedCampaign;
+      publisherContractBalance += updatedCampaign.currentBudget;
+
+      assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisher balance');
+    });
+
+    it(`forwards reward for a second time for the third campaign`, async () => {
+      const campaign = currentCampaignsStatus[2];
+
+      const campaignBeforeForward = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        publisher
+      );
+      console.log('campaignBeforeForward ', campaignBeforeForward)
+      const secondUserBalanceBefore = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
+      console.log('secondUserBalanceBefore: ', secondUserBalanceBefore)
+      console.log('secondUserBalanceBefore: typeof  ', typeof secondUserBalanceBefore)
+
+      await crowdclickEscrow.forwardRewards(
+        secondUser,
+        publisher,
+        campaign.uuid,
+        {
+          from: owner,
+        },
+      );
+      const campaignAfterForward = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        publisher
+      );
+
+      const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
+
+      assert.equal(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward))
+      assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
+      assert.isTrue(+campaignAfterForward.currentBudget > +campaignAfterForward.taskReward);
+      assert.isTrue(campaignAfterForward.isActive);  
+    });
+
+    it(`forwards reward for a third time for the third campaign`, async () => {
+      const campaign = currentCampaignsStatus[2];
+
+      const campaignBeforeForward = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        publisher
+      );
+      const secondUserBalanceBefore = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
+
+      await crowdclickEscrow.forwardRewards(
+        secondUser,
+        publisher,
+        campaign.uuid,
+        {
+          from: owner,
+        },
+      );
+      const campaignAfterForward = await crowdclickEscrow.lookupTask(
+        campaign.uuid,
+        publisher
+      );
+
+      const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser));
+
+      assert.equal(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward));
+      assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget -  +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
+      assert.isTrue(+campaignAfterForward.currentBudget > +campaignAfterForward.taskReward);
+      assert.isTrue(campaignAfterForward.isActive);
+    });
+
+
+    it(`forwards reward for a fourth time for the third campaign`, async () => {
+    const campaign = currentCampaignsStatus[2];
+
+    const campaignBeforeForward = await crowdclickEscrow.lookupTask(
+      campaign.uuid,
+      publisher
+    );
+    console.log('campaignBeforeForward ', campaignBeforeForward)
+    const secondUserBalanceBefore = fromE18(await crowdclickEscrow.balanceOfUser(secondUser))
+    console.log('secondUserBalanceBefore: ', secondUserBalanceBefore)
+
+    await crowdclickEscrow.forwardRewards(
+      secondUser,
+      publisher,
+      campaign.uuid,
+      {
+        from: owner,
+      },
+    );
+    const campaignAfterForward = await crowdclickEscrow.lookupTask(
+      campaign.uuid,
+      publisher
+    );
+    console.log('lastcampaignAfterForward ', campaignAfterForward)
+
+    const secondUserBalanceAfter = fromE18(await crowdclickEscrow.balanceOfUser(secondUser));
+    console.log('secondUserBalanceAfter: ', secondUserBalanceAfter)
+
+    assert.isTrue(approximateEquality(secondUserBalanceAfter, secondUserBalanceBefore + fromE18(campaignAfterForward.taskReward)));
+    assert.equal(+campaignAfterForward.currentBudget, +campaignBeforeForward.currentBudget - +campaignAfterForward.taskReward, 'wrong campaign.currentBudget after forwardRewards');
+    assert.isFalse(+campaignAfterForward.currentBudget > +campaignAfterForward.taskReward);
+    assert.isFalse(campaignAfterForward.isActive);
+    });
+
+    it(`forwards reward for a fifth time for the third campaign`, async () => {
+      try {
+        const campaign = currentCampaignsStatus[2];
+        await crowdclickEscrow.forwardRewards(
+          secondUser,
+          publisher,
+          campaign.uuid,
+          {
+            from: owner,
+          },
+        );
+        } catch(e) {
+          assert.equal(e.reason, 'CAMPAIGN_NOT_ACTIVE')
+        }
+      });
   });
 });

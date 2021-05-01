@@ -210,15 +210,16 @@ contract CrowdclickEscrow is
         /** decreases the balance of the campaign's owner by the campaign's reward */
         publisherAccountBalance[_publisherAddress] = publisherAccountBalance[_publisherAddress]
             .sub(taskInstance.taskReward);
-        /** increases the user's balance by the campaign's rewrd */
+        /** increases the user's balance by the campaign's reward */
         userAccountBalance[_userAddress] = userAccountBalance[_userAddress].add(
             taskInstance.taskReward
         );
         emit RewardForwarded(_userAddress, taskInstance.taskReward, taskInstance.url);
-        // if the updated campaign's current budget is less than the campaign's reward, then the campaign is not active anymore /
+        // if the updated campaign's current budget is less than the campaign's reward, then the campaign is not active anymore
         if (
             publisherAccountBalance[_publisherAddress] <=
-            taskInstance.taskReward
+            taskInstance.taskReward ||
+            taskInstance.currentBudget < taskInstance.taskReward
         ) {
             taskInstance.isActive = false;
         }
