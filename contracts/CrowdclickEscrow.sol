@@ -39,7 +39,7 @@ contract CrowdclickEscrow is
 
     // by default it converts to 18decimals /
     uint256 public divider;
-    // greater than price of eth to avoid decimals /
+    // greater than price of underlying to avoid decimals /
     uint256 public multiplier;
     // base minimumUsdWithdrawal * multiplier /
     uint256 public minimumUsdWithdrawal;
@@ -55,8 +55,8 @@ contract CrowdclickEscrow is
         uint256 _feePercentage,
         address payable _feeCollector
     ) public initializer {
-        __Ownable_init_unchained();
-        __ReentrancyGuard_init_unchained();
+        __Ownable_init();
+        __ReentrancyGuard_init();
         crowdclickOracle = ICrowdclickOracle(_crowdclickOracleAddress);
         minimumUsdWithdrawal = _minimumUsdWithdrawal;
         feePercentage = _feePercentage;

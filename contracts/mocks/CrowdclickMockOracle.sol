@@ -18,7 +18,7 @@ contract CrowdclickMockOracle is
         uint256 _currentUnderlyingPrice, 
         address _dataSource
     ) public {
-        __Ownable_init_unchained();
+        __Ownable_init();
         require(_currentUnderlyingPrice > 0, 'NOT_GREATER_THAN_0');
 
         currentUnderlyingPrice = _currentUnderlyingPrice;

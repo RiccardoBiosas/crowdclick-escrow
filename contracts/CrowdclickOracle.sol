@@ -31,8 +31,8 @@ contract CrowdclickOracle is
         uint256 _startTracking, 
         uint256 _trackingInterval
     ) public initializer {
-        __Ownable_init_unchained();
-        __ReentrancyGuard_init_unchained();
+        __Ownable_init();
+        __ReentrancyGuard_init();
         priceFeedOracle = AggregatorV3Interface(_priceFeedOracleAddress);
         /** initialize eth/usd pricefeed */
         currentEthUsdPrice = getOraclePriceFeed();
@@ -58,7 +58,8 @@ contract CrowdclickOracle is
     }
 
     function changeOracle(address _priceFeedOracleAddress) external onlyOwner() {
-       /** add check for valid address */
+        require(_priceFeedOracleAddress != address(0), "Not valid address");
+
        priceFeedOracle = AggregatorV3Interface(_priceFeedOracleAddress);
     }
 
