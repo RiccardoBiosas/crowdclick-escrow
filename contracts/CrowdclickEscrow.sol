@@ -37,11 +37,11 @@ contract CrowdclickEscrow is
     mapping(address => uint256) private userAccountBalance;
     mapping(address => uint256) public lastUserWithdrawalTime;
 
-    // by default it converts to 18decimals /
+    // by default it converts to 18decimals
     uint256 public divider;
-    // greater than price of underlying to avoid decimals /
+    // greater than price of underlying to avoid decimals
     uint256 public multiplier;
-    // base minimumUsdWithdrawal * multiplier /
+    // base minimumUsdWithdrawal * multiplier
     uint256 public minimumUsdWithdrawal;
     uint256 public maximumWeiUserWithdrawal;
     uint256 public feePercentage;

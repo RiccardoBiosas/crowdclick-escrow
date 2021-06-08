@@ -14,15 +14,15 @@ const APP_ENVIRONMENT = {
 const NETWORK_ENVIRONMENT = {
     GOERLI: 'GOERLI',
     RINKEBY: 'RINKEBY',
+    MATIC_MAINNET: 'MATIC_MAINNET',
     MUMBAI: 'MUMBAI',
     BSC_TESTNET: 'BSC_TESTNET',
     BSC_MAINNET: 'BSC_MAINNET'
 }
 
-const environment = process.env.APP_ENVIRONMENT || APP_ENVIRONMENT.DEVELOPMENT
-const networkEnvironment = NETWORK_ENVIRONMENT.RINKEBY
+const environment = process.env.APP_ENVIRONMENT || APP_ENVIRONMENT.PRODUCTION
+const networkEnvironment = NETWORK_ENVIRONMENT.MUMBAI
 const isProduction = environment === APP_ENVIRONMENT.PRODUCTION
-console.log('current network environment: ', networkEnvironment)
 /**
  * TODO:
  * use a chainlink mock on local ganache environment
@@ -34,11 +34,11 @@ const networkContracts = {
     [NETWORK_ENVIRONMENT.RINKEBY]: {
         chainlink: '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e' /** ETH/USD */
     },
-    [NETWORK_ENVIRONMENT.MATIC]: {
+    [NETWORK_ENVIRONMENT.MATIC_MAINNET]: {
         chainlink: '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e' /** MATIC/USD */
     },
     [NETWORK_ENVIRONMENT.MUMBAI]: {
-        chainlink: '' /** MATIC/USD */
+        chainlink: '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada' /** MATIC/USD */
     },
     [NETWORK_ENVIRONMENT.BSC_TESTNET]: {
         chainlink: '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526' /** BNB/USD */

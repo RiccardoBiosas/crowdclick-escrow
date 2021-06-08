@@ -1,9 +1,9 @@
 const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+const { assert } = require('chai');
 
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle');
-const { assert } = require('chai');
-const { fromE18, toE18 } = require('../../../dao/helpers');
-const currencyApi = require('../../../dao/api');
+const { fromE18, toE18 } = require('../../dao/helpers');
+const currencyApi = require('../../dao/api');
 
 contract("CrowdclickMockOracle contract's tests", (accounts) => {
   const [owner, user, newDataSource] = accounts;
