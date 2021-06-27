@@ -1,19 +1,18 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@chainlink/contracts/src/v0.5/interfaces/AggregatorV3Interface.sol";
 
-import "./constants/CrowdclickOracleErrors.sol";
+import "../constants/CrowdclickOracleErrors.sol";
 
 contract CrowdclickOracle is  
-    Initializable,
-    OwnableUpgradeable, 
     CrowdclickOracleErrors, 
-    ReentrancyGuardUpgradeable 
+    Ownable, 
+    ReentrancyGuard 
 {
     using SafeMath for uint256;
 
@@ -26,13 +25,11 @@ contract CrowdclickOracle is
     uint256 public startTracking;
     uint256 public trackingInterval;
 
-    function initialize(
+    constructor (
         address _priceFeedOracleAddress, 
         uint256 _startTracking, 
         uint256 _trackingInterval
-    ) public initializer {
-        __Ownable_init();
-        __ReentrancyGuard_init();
+    ) {
         priceFeedOracle = AggregatorV3Interface(_priceFeedOracleAddress);
         /** initialize eth/usd pricefeed */
         currentEthUsdPrice = getOraclePriceFeed();

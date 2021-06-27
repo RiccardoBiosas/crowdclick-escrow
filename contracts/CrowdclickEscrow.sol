@@ -1,8 +1,9 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -10,10 +11,9 @@ import "./constants/CrowdclickEscrowErrors.sol";
 import "./interfaces/ICrowdclickOracle.sol";
 
 contract CrowdclickEscrow is
-    Initializable,
-    OwnableUpgradeable, 
     CrowdclickEscrowErrors, 
-    ReentrancyGuardUpgradeable 
+    Ownable, 
+    ReentrancyGuard
 {
     using SafeMath for uint256;
 
@@ -49,14 +49,12 @@ contract CrowdclickEscrow is
 
     address payable public feeCollector;
 
-    function initialize(
+    constructor(
         address _crowdclickOracleAddress, 
         uint256 _minimumUsdWithdrawal,
         uint256 _feePercentage,
         address payable _feeCollector
-    ) public initializer {
-        __Ownable_init();
-        __ReentrancyGuard_init();
+    ) {
         crowdclickOracle = ICrowdclickOracle(_crowdclickOracleAddress);
         minimumUsdWithdrawal = _minimumUsdWithdrawal;
         feePercentage = _feePercentage;

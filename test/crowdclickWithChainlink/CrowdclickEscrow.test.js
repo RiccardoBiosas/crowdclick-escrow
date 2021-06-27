@@ -1,5 +1,3 @@
-const { deployProxy } = require('@openzeppelin/truffle-upgrades');
-
 const CrowdclickEscrow = artifacts.require('CrowdclickEscrow');
 const CrowdclickOracle = artifacts.require('CrowdclickOracle');
 const { assert } = require('chai');
@@ -35,9 +33,10 @@ contract('CrowdclickEscrow contract with CrowdclickOracle (with chainlink) as a 
   const currentCampaignsStatus = mockCampaigns;
 
   before(async () => {
-    crowdclickOracle = await deployProxy(CrowdclickOracle, [chainlink, startTracking, trackingInterval], { owner });
+    console.log('chainlink : ', chainlink)
+    crowdclickOracle = await CrowdclickOracle.new(chainlink, startTracking, trackingInterval, { from: owner });
     crowdclickOracleAddress = crowdclickOracle.address;
-    crowdclickEscrow = await deployProxy(CrowdclickEscrow, [crowdclickOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector], { owner });
+    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner });
   });
 
   context("Check deployment's data", () => {

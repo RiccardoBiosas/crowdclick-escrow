@@ -1,4 +1,3 @@
-const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const { assert } = require('chai');
 
 const CrowdclickMockOracle = artifacts.require('CrowdclickMockOracle');
@@ -18,7 +17,7 @@ contract("CrowdclickMockOracle contract's tests", (accounts) => {
     latestPushedPricefeed = await currencyApi.fetchEthToUSD();
     currentPriceFeedToWei = toE18(latestPushedPricefeed.toString());
     console.log('latestPushedPricefeed', latestPushedPricefeed);
-    crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentPriceFeedToWei, owner], { owner });
+    crowdclickMockOracle = await CrowdclickMockOracle.new(currentPriceFeedToWei, owner, { from: owner });
   });
 
   context("Check deployment's data", () => {

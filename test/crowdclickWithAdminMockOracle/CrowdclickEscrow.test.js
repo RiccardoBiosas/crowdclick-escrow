@@ -1,4 +1,3 @@
-const { deployProxy } = require('@openzeppelin/truffle-upgrades');
 const truffleAssert = require('truffle-assertions');
 const { time } = require('@openzeppelin/test-helpers');
 
@@ -42,9 +41,9 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
     currentUnderlying = await currencyApi.fetchMaticToUSD();
     console.log(`current underlying value: ${currentUnderlying}`)
     const currentUnderlyingToWei = toE18(currentUnderlying.toString());
-    crowdclickMockOracle = await deployProxy(CrowdclickMockOracle, [currentUnderlyingToWei, owner], { owner });
+    crowdclickMockOracle = await CrowdclickMockOracle.new(currentUnderlyingToWei, owner, { from: owner });
     crowdclickMockOracleAddress = crowdclickMockOracle.address;
-    crowdclickEscrow = await deployProxy(CrowdclickEscrow, [crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector], { owner });
+    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner });
   });
 
   context("Check deployment's data", () => {
