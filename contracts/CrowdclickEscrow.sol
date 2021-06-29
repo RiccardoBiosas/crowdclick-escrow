@@ -124,24 +124,10 @@ contract CrowdclickEscrow is
         external
         payable 
         nonReentrant {
-        uint256 userWeiBalance = userAccountBalance[msg.sender];
-        uint256 userBalanceToUsd = calculateWeiUsdPricefeed(userWeiBalance);
-        require(block.timestamp >= lastUserWithdrawalTime[msg.sender] + 1 days, DAILY_WITHDRAWALS_EXCEEDED);
-        require(
-            userBalanceToUsd >= minimumUsdWithdrawal.mul(1000),
-            NOT_ENOUGH_USER_BALANCE
-        );
-        if(userWeiBalance >= maximumWeiUserWithdrawal) {
-            userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(maximumWeiUserWithdrawal);
-            lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
-            payable(msg.sender).transfer(maximumWeiUserWithdrawal);
-            emit UserWithdrawalEmitted(msg.sender, maximumWeiUserWithdrawal);
-        } else {
-            userAccountBalance[msg.sender] = userAccountBalance[msg.sender].sub(userWeiBalance);
-            lastUserWithdrawalTime[msg.sender] = block.timestamp + 1 days;
-            payable(msg.sender).transfer(userWeiBalance);
-            emit UserWithdrawalEmitted(msg.sender, userWeiBalance);
-        }
+        require(userAccountBalance[msg.sender] > 0);
+        emit UserWithdrawalEmitted(msg.sender, userAccountBalance[msg.sender]);
+        payable(msg.sender).transfer(userAccountBalance[msg.sender]);
+        userAccountBalance[msg.sender] = 0;
     }
 
     function withdrawFromCampaign(string calldata _uuid)
