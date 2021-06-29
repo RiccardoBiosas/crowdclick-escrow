@@ -73,15 +73,13 @@ contract CrowdclickEscrow is
         uint256 _taskReward,
         string calldata _campaignUrl
     ) external payable nonReentrant {
-        uint256 fee = calculateFee(_taskBudget);
         require(msg.value == _taskBudget, WRONG_CAMPAIGN_BUDGET);
-        require(_taskBudget.sub(fee) >= _taskReward, WRONG_CAMPAIGN_REWARD);
-        collectedFee = collectedFee.add(fee);
+        require(_taskBudget >= _taskReward, WRONG_CAMPAIGN_REWARD);
 
         Task memory taskInstance;
         taskInstance.taskBudget = _taskBudget;
         taskInstance.taskReward = _taskReward;
-        taskInstance.currentBudget = _taskBudget.sub(fee);
+        taskInstance.currentBudget = _taskBudget;
         taskInstance.isActive = true;
         taskInstance.url = _campaignUrl;
         taskCollection[msg.sender][_uuid] = taskInstance;
@@ -124,9 +122,11 @@ contract CrowdclickEscrow is
         external
         payable 
         nonReentrant {
-        require(userAccountBalance[msg.sender] > 0);
-        emit UserWithdrawalEmitted(msg.sender, userAccountBalance[msg.sender]);
-        payable(msg.sender).transfer(userAccountBalance[msg.sender]);
+        uint256 fee = calculateFee(userAccountBalance[msg.sender]);
+        require(userAccountBalance[msg.sender].sub(fee) > 0);
+        collectedFee = collectedFee.add(fee);
+        emit UserWithdrawalEmitted(msg.sender, userAccountBalance[msg.sender].sub(fee));
+        payable(msg.sender).transfer(userAccountBalance[msg.sender].sub(fee));
         userAccountBalance[msg.sender] = 0;
     }
 

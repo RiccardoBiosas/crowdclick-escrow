@@ -7,7 +7,7 @@ const toE18 = amount =>  web3.utils.toWei(amount)
 
 /* dirty way to take into account the gas fee */
 const approximateEquality = (x, y, epsilon = 0.001) => {
-  return Math.abs(x - y) < epsilon
+  return Math.abs(x.toFixed(8) - y.toFixed(8)) < epsilon
 }
 
 const calculateFee = (amount, feePercentage) => {

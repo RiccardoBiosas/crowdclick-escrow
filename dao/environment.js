@@ -21,7 +21,8 @@ const NETWORK_ENVIRONMENT = {
 }
 
 const environment = process.env.APP_ENVIRONMENT || APP_ENVIRONMENT.PRODUCTION
-const networkEnvironment = NETWORK_ENVIRONMENT.MUMBAI
+console.log('environment: ', environment)
+const networkEnvironment = NETWORK_ENVIRONMENT.RINKEBY
 const isProduction = environment === APP_ENVIRONMENT.PRODUCTION
 /**
  * TODO:
