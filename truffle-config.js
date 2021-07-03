@@ -44,9 +44,9 @@ module.exports = {
       skyDryRun: true
     },
     bscMainnet: {
-      provider: () => new HDWalletProvider(process.env.MNEMONIC, `https://bsc-dataseed1.binance.org`),
+      provider: () => new HDWalletProvider(process.env.PRODUCTION_MNEMONIC, process.env.BSC_CHAINSTACK),
       network_id: 56,
-      confirmations: 10,
+      confirmations: 3,
       timeoutBlocks: 200,
       skipDryRun: true
     },
@@ -72,6 +72,7 @@ module.exports = {
     'truffle-plugin-verify'
   ],
   api_keys: {
-    etherscan: process.env.ETHERSCAN_API
+    etherscan: process.env.ETHERSCAN_API,
+    bscscan: process.env.BSCSCAN_API
   }
 };

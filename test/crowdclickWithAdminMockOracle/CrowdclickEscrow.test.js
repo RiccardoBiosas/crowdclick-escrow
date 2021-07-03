@@ -43,7 +43,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
     const currentUnderlyingToWei = toE18(currentUnderlying.toString());
     crowdclickMockOracle = await CrowdclickMockOracle.new(currentUnderlyingToWei, owner, { from: owner });
     crowdclickMockOracleAddress = crowdclickMockOracle.address;
-    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickMockOracleAddress, minimumUsdWithdrawal, campaignFee, feeCollector, { from: owner });
+    crowdclickEscrow = await CrowdclickEscrow.new(crowdclickMockOracleAddress, campaignFee, feeCollector, { from: owner });
   });
 
   context("Check deployment's data", () => {
@@ -116,8 +116,8 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         },
       );
       await truffleAssert.eventEmitted(tx, 'RewardForwarded', (ev) => {
-        console.log(`###RewardForwarded### recipient: ${ev.recipient}, reward: ${ev.reward.toString()}, campaignUrl: ${ev.campaignUrl}`);
-        return ev.recipient === user && +ev.reward.toString() === +toE18(campaign.taskReward.toString()) && ev.campaignUrl === campaign.url;
+        console.log(`###RewardForwarded### recipient: ${ev.recipient}, publisher: ${ev.publisher}, reward: ${ev.reward.toString()}, campaignUrl: ${ev.campaignUrl}`);
+        return ev.recipient === user && ev.publisher === publisher && +ev.reward.toString() === +toE18(campaign.taskReward.toString()) && ev.campaignUrl === campaign.url;
       });
       userContractbalance = campaign.taskReward;
       currentCampaignsStatus[0] = updateCampaign(campaign, campaign.currentBudget, CAMPAIGN_OPERATION.FORWARD_REWARD);
@@ -259,7 +259,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
       assert.isTrue(approximateEquality(fromE18(await crowdclickEscrow.balanceOfPublisher(publisher)), publisherContractBalance, 0.001), 'wrong publisher balance');
     });
 
-    it('it should forward the reward for the newly created task and update the user\'s balance accordingly', async () => {
+    it(`it should forward the reward for the newly created task and update the user's balance accordingly`, async () => {
       const campaign = currentCampaignsStatus[1];
 
       const campaignBeforeForward = await crowdclickEscrow.lookupTask(
@@ -276,8 +276,8 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
         },
       );
       await truffleAssert.eventEmitted(tx, 'RewardForwarded', (ev) => {
-        console.log(`###RewardForwarded### recipient: ${ev.recipient}, reward: ${ev.reward.toString()}, campaignUrl: ${ev.campaignUrl.toString()}`);
-        return ev.recipient === secondUser && +ev.reward.toString() === +toE18(campaign.taskReward.toString()) && ev.campaignUrl === campaign.url;
+        console.log(`###RewardForwarded### recipient: ${ev.recipient},  publisher: ${ev.publisher}, reward: ${ev.reward.toString()}, campaignUrl: ${ev.campaignUrl.toString()}`);
+        return ev.recipient === secondUser && ev.publisher === publisher && +ev.reward.toString() === +toE18(campaign.taskReward.toString()) && ev.campaignUrl === campaign.url;
       });
       const campaignAfterForward = await crowdclickEscrow.lookupTask(
         campaign.uuid,
@@ -293,7 +293,7 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
       assert.equal(fromE18(await crowdclickEscrow.balanceOfUser(secondUser)), secondUserContractBalance, 'wrong user balance');
     });
 
-    it('admin should be able to to close a campaign and forward to the publisher the remaining campaign\'s balance on publisher\'s behalf', async () => {
+    it(`admin should be able to to close a campaign and forward to the publisher the remaining campaign's balance on publisher's behalf`, async () => {
       publisherWalletBalance = fromE18(await web3.eth.getBalance(publisher))
           + publisherContractBalance;
 
@@ -428,21 +428,6 @@ contract('CrowdclickEscrow contract with CrowdclickMockOracle as a data source',
       } catch (error) {
         assert.equal(error.reason, 'DAILY_WITHDRAWALS_EXCEEDED');
       }
-    });
-
-    it('should fail: only owner can change maximumWeiUserWithdrawal', async () => {
-      try {
-        await crowdclickEscrow.changeMaximumWeiUserWithdrawal('300000000000000000', { from: user });
-      } catch (error) {
-        assert.equal(error.reason, 'Ownable: caller is not the owner');
-      }
-    });
-
-    it('owner can change maximumWeiUserWithdrawal', async () => {
-      const updatedMaximumWeiUserWithdrawal = '300000000000000000';
-      await crowdclickEscrow.changeMaximumWeiUserWithdrawal(updatedMaximumWeiUserWithdrawal, { from: owner });
-      const currentMaximumWeiUserWithdrawal = await crowdclickEscrow.maximumWeiUserWithdrawal.call();
-      assert.equal(updatedMaximumWeiUserWithdrawal, currentMaximumWeiUserWithdrawal.toString(), 'wrong maximumWeiUserWithdrawal');
     });
 
     it(`publisher creates the fourth contract campaign with the same url as the first contract campaign`, async () => {

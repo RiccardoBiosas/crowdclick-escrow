@@ -19,7 +19,7 @@ contract CrowdclickEscrow is
 
     ICrowdclickOracle internal crowdclickOracle;
 
-    event RewardForwarded(address recipient, uint256 reward, string campaignUrl);
+    event RewardForwarded(address recipient, address publisher, uint256 reward, string campaignUrl);
     event CampaignCreated(address publisher, uint256 campaignBudget, string campaignUrl);
     event UserWithdrawalEmitted(address recipient, uint256 amount);
     event PublisherWithdrawalEmitted(address recipient, uint256 amount, string campaignUrl);
@@ -35,15 +35,7 @@ contract CrowdclickEscrow is
     mapping(address => mapping(string => Task)) taskCollection;
     mapping(address => uint256) private publisherAccountBalance;
     mapping(address => uint256) private userAccountBalance;
-    mapping(address => uint256) public lastUserWithdrawalTime;
 
-    // by default it converts to 18decimals
-    uint256 public divider;
-    // greater than price of underlying to avoid decimals
-    uint256 public multiplier;
-    // base minimumUsdWithdrawal * multiplier
-    uint256 public minimumUsdWithdrawal;
-    uint256 public maximumWeiUserWithdrawal;
     uint256 public feePercentage;
     uint256 public collectedFee;
 
@@ -51,18 +43,12 @@ contract CrowdclickEscrow is
 
     constructor(
         address _crowdclickOracleAddress, 
-        uint256 _minimumUsdWithdrawal,
         uint256 _feePercentage,
         address payable _feeCollector
     ) {
         crowdclickOracle = ICrowdclickOracle(_crowdclickOracleAddress);
-        minimumUsdWithdrawal = _minimumUsdWithdrawal;
         feePercentage = _feePercentage;
         feeCollector = _feeCollector;
-
-        maximumWeiUserWithdrawal =  5e17;
-        divider = 1e18;
-        multiplier = 1e6;
     }
 
     // EXTERNAL FUNCTIONS /
@@ -98,10 +84,6 @@ contract CrowdclickEscrow is
         feePercentage = _newFeePercentage;
     }
 
-    function changeMaximumWeiUserWithdrawal(uint256 _updatedMaximumWeiUserWithdrawal) external onlyOwner() {
-        maximumWeiUserWithdrawal = _updatedMaximumWeiUserWithdrawal;
-    }
-
     function balanceOfPublisher(address _address)
         external
         view
@@ -112,10 +94,6 @@ contract CrowdclickEscrow is
 
     function balanceOfUser(address _address) external view returns (uint256) {
         return userAccountBalance[_address];
-    }
-
-    function isUserWithdrawalEnabled() external view returns (bool) {
-        return block.timestamp >= lastUserWithdrawalTime[msg.sender] + 1 days;
     }
 
     function withdrawUserBalance() 
@@ -199,7 +177,7 @@ contract CrowdclickEscrow is
         userAccountBalance[_userAddress] = userAccountBalance[_userAddress].add(
             taskInstance.taskReward
         );
-        emit RewardForwarded(_userAddress, taskInstance.taskReward, taskInstance.url);
+        emit RewardForwarded(_userAddress, _publisherAddress, taskInstance.taskReward, taskInstance.url);
         // if the updated campaign's current budget is less than the campaign's reward, then the campaign is not active anymore
         if (
             publisherAccountBalance[_publisherAddress] <=
@@ -208,11 +186,6 @@ contract CrowdclickEscrow is
         ) {
             taskInstance.isActive = false;
         }
-    }
-
-    function calculateWithdrawalRate(uint256 _assetPrice) view external returns(uint256) {
-        require(_assetPrice > 0, VALUE_NOT_GREATER_THAN_0);
-        return minimumUsdWithdrawal.div(_assetPrice);
     }
 
     function collectFee() external {
@@ -267,8 +240,7 @@ contract CrowdclickEscrow is
         emit UserWithdrawalEmitted(_userAddress, userBalance);
     }
 
-    // PRIVATE FUNCTIONS /
-    
+    // PRIVATE FUNCTIONS /    
 
     /** retrieves correct task based on the address of the publisher and the campaign's url */
     function _selectTask(address _address, string memory _uuid)
@@ -279,32 +251,8 @@ contract CrowdclickEscrow is
         return taskCollection[_address][_uuid];
     }
 
-    function calculateWeiUsdPricefeed(uint256 _weiAmount) private returns(uint256) {
-        require(_weiAmount > 0, VALUE_NOT_GREATER_THAN_0);
-        // fetches current eth/usd pricefeed /
-        uint256 currentUnderlyingPrice = crowdclickOracle.getUnderlyingUsdPriceFeed();
-        // adjusts the 8decimals-long eth/usd pricefeed and adjusts by multiplier /
-        uint256 adjustedCurrentUnderlyingPrice = (currentUnderlyingPrice.div(100000000)).mul(multiplier);
-        // adjusts the 18decimals-long wei value and adjusts by multiplier /
-        uint256 adjustedUnderlyingAmount = adjustByDivider(adjustByMultiplier(_weiAmount));
-        // one-millionth /
-        uint256 sliceOfWholeUnderlying = adjustedCurrentUnderlyingPrice.div(adjustedUnderlyingAmount);
-        // adjusted wei/usd pricefeed /
-        return adjustedCurrentUnderlyingPrice.div(sliceOfWholeUnderlying);
-    }
-
     function calculateFee(uint256 _amount) view private returns(uint256) {
         require(_amount > 0, VALUE_NOT_GREATER_THAN_0);
         return _amount.mul(feePercentage).div(100);
-    }
-
-    function adjustByMultiplier(uint256 _value) view private returns(uint256) {
-        require(_value > 0, VALUE_NOT_GREATER_THAN_0);
-        return _value.mul(multiplier);
-    }
-
-    function adjustByDivider(uint256 _value) view private returns(uint256) {
-        require(_value > 0, VALUE_NOT_GREATER_THAN_0);
-        return _value.div(divider);
     }
 }

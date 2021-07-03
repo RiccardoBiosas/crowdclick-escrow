@@ -2,7 +2,7 @@ const CrowdclickEscrow = artifacts.require('CrowdclickEscrow');
 const CrowdclickOracle = artifacts.require('CrowdclickOracle');
 const config = require('../dao/environment');
 
-const { minimumUsdWithdrawal, feePercentage } = config.contractDeployment.crowdclickEscrow;
+const { feePercentage } = config.contractDeployment.crowdclickEscrow;
 const { trackingInterval } = config.contractDeployment.crowdclickOracle;
 const { chainlink } = config.networkContracts[config.networkEnvironment];
 const startTracking = ~~(Date.now() / 1000);
@@ -14,7 +14,7 @@ module.exports = function (deployer, network, accounts) {
     deployer.then(async () => {
       const owner = accounts[0];
       const crowdclickOracle = await deployCrowdclickOracle(owner);
-      const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickOracle.address, minimumUsdWithdrawal, feePercentage, owner, { from: owner });
+      const crowdclickEscrow = await deployer.deploy(CrowdclickEscrow, crowdclickOracle.address, feePercentage, owner, { from: owner });
       console.log(`CrowdclickOracle address: ${crowdclickOracle.address}`);
       console.log(`CrowdclickEscrow address: ${crowdclickEscrow.address}`);
     }).catch((e) => {
