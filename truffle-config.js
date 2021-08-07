@@ -43,6 +43,13 @@ module.exports = {
       timeoutBlocks: 200,
       skyDryRun: true
     },
+    polygon: {
+      provider: () => new HDWalletProvider(process.env.MNEMONIC, `https://matic-mainnet.chainstacklabs.com`),
+      network_id: 137,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      skyDryRun: true
+    },
     bscMainnet: {
       provider: () => new HDWalletProvider(process.env.PRODUCTION_MNEMONIC, process.env.BSC_CHAINSTACK),
       network_id: 56,
